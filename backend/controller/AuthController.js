@@ -5,16 +5,17 @@ const jwt =require('jsonwebtoken');
 
 exports.registerUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
+        const { username, email, password,role } = req.body;
         const existingUser = await user.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new user({ name, email, password: hashedPassword });
+        const newUser = new user({ username, email, password: hashedPassword ,role});
         await newUser.save();
         res.status(201).json({ message: "User registered successfully" });
     } catch (error) {
+        
         res.status(500).json({ message: "Server error" });
     }   
 };
@@ -38,6 +39,7 @@ exports.loginUser= async (req,res)=>{
         res.status(200).json({ token, message: "Login successful" });
 
     }catch(e){
+        
         res.status(500).json({ message: "Server error" });
     }
 };
