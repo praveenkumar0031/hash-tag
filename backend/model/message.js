@@ -1,9 +1,9 @@
 const mongoose=require('mongoose')
 
 const msgSchema=mongoose.Schema({
-    roomId:{type:ObjectId,required:true},
-    SenderId:{type:ObjectId,required:true},
+    roomId:{type:Object,required:true},
+    SenderId:{type:Object,required:true},
     content:{type:String,required:true},
-},{timestamp:true})
+},{timestamps:true})
 
 module.exports=mongoose.model("msg",msgSchema);
