@@ -11,3 +11,16 @@ exports.auth=async(req,res,next)=>{
         res.status(401).json({message:"Unauthorized"});
     }
 };
+exports.msglayer=async(req,res,next)=>{
+    try{
+        const userId=req.userId;
+        
+        req.roomId=
+        req.msgId=
+        next();
+    }catch(error){
+        res.status(401).json({message:"Unauthorized"});
+    }
+};
+
+

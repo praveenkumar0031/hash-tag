@@ -36,10 +36,18 @@ exports.loginUser= async (req,res)=>{
             process.env.JWT_SECRET, 
             { expiresIn: '1h' }
         );
-        res.status(200).json({ token, message: "Login successful" });
+        res.status(200).json({
+            token,
+            user: {
+                id: existingUser._id,
+                name: existingUser.name,
+                role: existingUser.role
+            }
+            });
+
 
     }catch(e){
-        
+        console.error("llogin error:",e);
         res.status(500).json({ message: "Server error" });
     }
 };

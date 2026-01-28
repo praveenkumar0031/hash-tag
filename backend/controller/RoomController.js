@@ -24,10 +24,12 @@ exports.createRoom=async(req,res)=>{
         }
         const newroom=new room({ownerId,name,memberId,description,isprivate,password});
         await newroom.save();
-        res.status(201).json({newroom},"room created sucessfully!");
+        const io = req.app.get('socketio');
+        io.emit('room-list-update', newroom);
+        res.status(201).json(newroom);
     }catch(e){
-        console.log(e);
-        res.status(400).json("server error");
+        console.log("room create error:",e);
+        res.status(500).json("server error");
     }
 }
 
@@ -47,25 +49,27 @@ exports.updateRoom=async(req,res)=>{
             password:password
         });
         if(!existingroom){
-            return res.status(500).json({existingroom},"room not exists!");
+            return res.status(500).json("room not exists!");
         }
-        res.status(200).json("room Updated sucessfully!");
+        const io = req.app.get('socketio');
+        io.emit("room-updated", existingroom);
+
+        res.status(200).json(existingroom);
     }catch(e){
-        console.log(e);
-        res.status(400).json("server error");
+        console.log("room update error:",e);
+        res.status(500).json("server error");
     }
 }
 exports.getRooms=async(req,res)=>{
     try{
-        
         const existingroom= await room.find().sort({createdAt:-1});//resently created first
         if(!existingroom){
             return  res.status(400).json("No room exists");
         }
-        res.status(201).json({"room":existingroom});
+        res.status(201).json(existingroom);
     }catch(e){
-        console.log(e);
-        res.status(400).json("server error");
+        console.log("get rooms error:",e);
+        res.status(500).json("server error");
     }
 }
 exports.getRoom=async(req,res)=>{
@@ -75,24 +79,27 @@ exports.getRoom=async(req,res)=>{
         if(!existingroom){
             return  res.status(400).json("No room exists");
         }
-        res.status(201).json({"room":existingroom});
+        res.status(201).json(existingroom);
     }catch(e){
-        console.log(e);
-        res.status(400).json("server error");
+        console.log("get room error:",e);
+        res.status(500).json("server error");
     }
 }
 exports.deleteRoom=async(req,res)=>{
     try{
         const ownerId=req.userId;
-        const result=await room.deleteOne({_id:req.params.id,ownerId:ownerId})
+        const _id=req.params.id;
+        const result=await room.deleteOne({_id:_id,ownerId:ownerId})
+        const resetmsg=await msg.deleteMany({roomId:_id})
         if (result.deletedCount === 0) {
-            return res.status(404).json({ 
-                message: "Room not found or you don't have permission to delete it" 
-            });
+            return res.status(404).json("Room not found or you don't have permission to delete it" );
         }
-        res.status(200).json({message:"Deleted sucessfully"});
+        const io = req.app.get('socketio');
+        io.emit("room-deleted", _id);
+
+        res.status(200).json("Room Deleted sucessfully");
     }catch(error){
-        console.log("Delete Error:",error);
+        console.log("Delete room Error:",error);
         res.status(500).json({message:" Server error"});
     }
 }
@@ -116,7 +123,7 @@ exports.changePrivate=async(req,res)=>{
         }
         res.status(200).json("room status Updated sucessfully!");
     }catch(e){
-        console.log(e);
+        console.log("room status error:",e);
         res.status(400).json("server error");
     }
 }
@@ -145,6 +152,12 @@ exports.joinRoom=async(req,res)=>{
         
         existingroom.memberId.push(userId);
         await existingroom.save()
+        const io = req.app.get('socketio');
+        io.to(roomId).emit("user-joined-room", {
+            roomId,
+            userId
+        });
+
         res.status(200).json({"room":existingroom});
 
     }catch(e){
@@ -164,8 +177,17 @@ exports.leftRoom=async(req,res)=>{
         if (!existingroom.memberId.includes(userId)) {
             return res.status(400).json({ message: "User already left from room" });
         }
-        existingroom.memberId.pop(userId);
+        existingroom.memberId = existingroom.memberId.filter(
+            id => id.toString() !== userId.toString()
+        );
+
         await existingroom.save()
+        const io = req.app.get('socketio');
+            io.to(roomId).emit("user-left-room", {
+                roomId,
+                userId
+            });
+
         res.status(200).json("User left from room");
 
     }catch(e){
