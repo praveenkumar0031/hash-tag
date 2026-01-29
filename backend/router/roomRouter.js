@@ -10,5 +10,5 @@ router.get("/getall",auth,getRooms);
 router.get("/get/:id",auth,getRoom);
 router.patch("/status/:id",auth,changePrivate);
 router.patch("/join/:id",auth,joinRoom);
-router.patch("/left/:id",auth,leftRoom);
+router.patch("/leave/:id",auth,leftRoom);
 module.exports=router;

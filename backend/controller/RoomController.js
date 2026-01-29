@@ -75,7 +75,7 @@ exports.getRooms=async(req,res)=>{
 exports.getRoom=async(req,res)=>{
     try{
         
-        const existingroom= await room.find({_id:req.prarms.id});
+        const existingroom= await room.find({_id:req.params.id});
         if(!existingroom){
             return  res.status(400).json("No room exists");
         }

@@ -4,15 +4,16 @@ const msg=require('../model/message');
 
 exports.addmessage=async(req,res)=>{
     try{
-        const roomId=req.roomId;
+        const roomId=req.params.id;
         const senderId=req.userId;
         const {content}=req.body;
         
         const sendermsg=new msg({roomId,senderId,content});
         await sendermsg.save();
+        const populatedMsg = await sendermsg.populate('senderId', 'username');
         const io = req.app.get("socketio");
-        io.to(roomId).emit("new-message", sendermsg);
-        res.status(201).json(sendermsg);
+        io.to(roomId.toString()).emit("new-message", populatedMsg);
+        res.status(201).json(populatedMsg);
     }catch(e){
         console.log("add message error:",e);
         res.status(500).json("server error");
@@ -21,7 +22,7 @@ exports.addmessage=async(req,res)=>{
 
 exports.removemessage=async(req,res)=>{
     try{
-        const _id=req.msgId;
+        const _id=req.params.id;;
         const result=await msg.deleteOne({_id});
         if(result.deletedCount===0){
             return res.status(404).json("msg not found it" );
@@ -39,8 +40,8 @@ exports.removemessage=async(req,res)=>{
 
 exports.getmessages=async(req,res)=>{
     try{
-        const roomId=req.roomId;
-        const resmsg=await msg.find({roomId}).sort({createdAt:1}).limit(50);
+        const roomId=req.params.id;
+        const resmsg=await msg.find({roomId}).populate('senderId','username').sort({createdAt:1});
         if(!resmsg){
             return res.status(200).json("no message found" );
         }
@@ -51,14 +52,13 @@ exports.getmessages=async(req,res)=>{
     }
 }
 
-exports.modifymessages=async(req,res)=>{
+exports.modifymessage=async(req,res)=>{
     try{
-        const _id=req.msgId;
+        const _id=req.params.id;
         const content=req.body.content;
         const updated=await msg.findOneAndUpdate(
             {_id},
-            {content},
-            {new:true}
+            {content}
         );
         if(!updated){
             return res.status(404).json("message  not found" );
