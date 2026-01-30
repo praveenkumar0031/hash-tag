@@ -51,3 +51,19 @@ exports.loginUser= async (req,res)=>{
         res.status(500).json({ message: "Server error" });
     }
 };
+
+exports.getUserById=async(req,res)=>{
+    try{
+        const userId=req.userId
+        const existingUser= await user.findOne({_id:userId});
+        if(!existingUser){
+            return res.status(400).json({ message: "User doesn't exist"});
+        }
+        res.status(200).json(existingUser);
+
+
+    }catch(e){
+        console.error("get userById error:",e);
+        res.status(500).json({ message: "Server error" });
+    }
+}

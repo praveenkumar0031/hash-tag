@@ -14,7 +14,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [type, setType] = useState(""); // success | error
+  const [type, setType] = useState(""); 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,12 +32,12 @@ const Signup = () => {
     try {
       const res = await signupapi(signup);
 
-      // ✅ Explicit success check
+      
       if (res) {
         setMessage("Account created successfully 🎉");
         setType("success");
 
-        // optional: clear form
+        
         setSignup({
           username: "",
           email: "",

@@ -8,7 +8,7 @@ const msgSocket = require("./socket/msg-socket");
 const cors = require("cors");
 const authrouter = require("./router/userRouter");
 const roomrouter = require("./router/roomRouter");
-const msgrouter=require('./router/msgRouter')
+const msgrouter = require('./router/msgRouter')
 dotenv.config();
 connectDb();
 
@@ -18,11 +18,11 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-const server = http.createServer(app); 
+const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", 
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -40,11 +40,14 @@ io.on("connection", (socket) => {
 
   socket.on("join_room", (roomId) => {
     socket.join(roomId);
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
+    //console.log(`Socket ${socket.id} joined room ${roomId}`);
   });
 
+  // server.js
   socket.on("send_message", (data) => {
-    io.to(data.roomId).emit("receive_message", data);
+
+    io.to(data.roomId).emit("new-message", data);
+    console.log(`Message from ${socket.id} broadcasted to room ${data.roomId}`);
   });
 
   socket.on("disconnect", () => {

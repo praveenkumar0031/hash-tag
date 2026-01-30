@@ -8,17 +8,7 @@ exports.auth=async(req,res,next)=>{
         req.userId=decoded.id;
         next();
     }catch(error){
-        res.status(401).json({message:"Unauthorized"});
-    }
-};
-exports.msglayer=async(req,res,next)=>{
-    try{
-        const userId=req.userId;
-        
-        req.roomId=
-        req.msgId=
-        next();
-    }catch(error){
+        console.error("auth error "+error)
         res.status(401).json({message:"Unauthorized"});
     }
 };

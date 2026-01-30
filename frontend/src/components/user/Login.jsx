@@ -30,12 +30,14 @@ const handleSubmit = async (e) => {
 
   try {
     const res = await loginapi(login);
-
-    // ✅ Explicit success check
+    
+    
     if (res.token) {
       setMessage("Login successful");
       setType("success");
+
       localStorage.setItem('token', res.token);
+      localStorage.setItem('email',login.email);
       //console.log("local:",localStorage.getItem('token'))
       navigate("/dashboard");
     } else {
@@ -44,7 +46,7 @@ const handleSubmit = async (e) => {
     }
 
   } catch (err) {
-    // ✅ 400 / 401 / 500 land here
+    
     setMessage(
       err.response?.data?.message || "Invalid credentials"
     );

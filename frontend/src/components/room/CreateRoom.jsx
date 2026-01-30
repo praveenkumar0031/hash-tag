@@ -26,7 +26,7 @@ const CreateRoom = () => {
     e.preventDefault();
     setError('');
     
-    // Basic Validation
+    
     if (formData.isprivate && !formData.password) {
       return setError("Private rooms require a password.");
     }
@@ -35,7 +35,7 @@ const CreateRoom = () => {
       setLoading(true);
       const newRoom = await createRoomApi(formData);
       console.log("Room Created:", newRoom);
-      // Redirect to dashboard or the new room
+      
       navigate('/dashboard'); 
     } catch (err) {
       setError(err.response?.data || "Failed to create room. Try a different name.");

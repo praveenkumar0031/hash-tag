@@ -1,55 +1,76 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { socket } from '../../socket';
-import { getMessagesApi, addMessageApi,getRoomByIdApi } from '../../api/api';
-
+import { getMessagesApi, addMessageApi, getRoomByIdApi, leaveRoomApi } from '../../api/api';
+import { useAuth } from '../../context/AuthContext';
 import { MdSend, MdArrowBack, MdTag, MdInfoOutline } from 'react-icons/md';
 
 const Chat = () => {
+  const { currentUserId, loading: authLoading } = useAuth();
   const { roomId } = useParams();
   const navigate = useNavigate();
+
   const [messages, setMessages] = useState([]);
   const [roomInfo, setRoomInfo] = useState(null);
   const [text, setText] = useState('');
+  const [fetching, setFetching] = useState(true);
   const scrollRef = useRef(null);
-  const currentUserId = localStorage.getItem('userId');
 
   useEffect(() => {
-  if (!roomId || roomId === "undefined") return;
+    if (authLoading || !roomId) return;
 
-  // 1. Join Room immediately
-  socket.emit("join_room", roomId);
-  console.log("Client Emitted join_room for:", roomId);
+    let isMounted = true;
 
-  // 2. Fetch History & Room Info
-  const initChat = async () => {
-    try {
-      const [msgData, roomData] = await Promise.all([
-        getMessagesApi(roomId),
-        getRoomByIdApi(roomId)
-      ]);
-      setMessages(msgData);
-      setRoomInfo(roomData);
-    } catch (err) {
-      console.error("Init Error:", err);
-    }
-  };
-  initChat();
+    const initChat = async () => {
+      try {
+        const [msgData, roomData] = await Promise.all([
+          getMessagesApi(roomId),
+          getRoomByIdApi(roomId)
+        ]);
+        if (isMounted) {
+          setMessages(msgData);
+          setRoomInfo(roomData);
+          setFetching(false);
 
-  // 3. Setup Listener ONCE
-  const handleNewMessage = (incomingMsg) => {
-    console.log("New message received via Socket:", incomingMsg);
-    // Use functional update to ensure we have the latest state
-    setMessages((prev) => [...prev, incomingMsg]);
-  };
+          //console.log("1. Emitting join_room for:", roomId);
+          socket.emit("join_room", roomId);
+        }
+      } catch (err) {
+        console.error("Init Error:", err);
+        setFetching(false);
+      }
+    };
 
-  socket.on("new-message", handleNewMessage);
+    initChat();
 
-  // Cleanup correctly
-  return () => {
-    socket.off("new-message", handleNewMessage);
-  };
-}, [roomId]);
+
+    const handleNewMessage = (incomingMsg) => {
+      //console.log("2. RECEIVED MESSAGE VIA SOCKET:", incomingMsg);
+
+      setMessages((prev) => {
+
+        if (prev.find(m => m._id === incomingMsg._id)) return prev;
+        const newArray = [...prev, incomingMsg];
+        console.log("3. UI STATE UPDATING. New count:", newArray.length);
+        return newArray;
+      });
+    };
+
+    socket.on("new-message", handleNewMessage);
+
+
+    socket.on("connect", () => {
+      //console.log("Socket reconnected. Re-joining room:", roomId);
+      socket.emit("join_room", roomId);
+    });
+
+    return () => {
+      isMounted = false;
+      socket.off("new-message", handleNewMessage);
+      socket.off("connect");
+    };
+  }, [roomId, authLoading]);
+
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -57,72 +78,82 @@ const Chat = () => {
   const handleSend = async (e) => {
     e.preventDefault();
     if (!text.trim()) return;
+
     try {
-      await addMessageApi(roomId, text);
+      const messageContent = text;
       setText('');
+
+      const savedMsg = await addMessageApi(roomId, messageContent);
+      //console.log("4. MESSAGE SAVED TO DB:", savedMsg);
+
+
+      socket.emit("send_message", { ...savedMsg, roomId });
+      //console.log("5. EMITTED send_message to server");
+
     } catch (err) {
-      alert("Send failed");
+      console.error("Send failed:", err);
     }
   };
 
+  const handleBack = async () => {
+    await leaveRoomApi(roomId);
+    navigate('/dashboard');
+  };
+
+  if (authLoading || fetching) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+
   return (
-    <div className="flex flex-col h-screen bg-slate-50 w-full max-w-full overflow-hidden">
-      {/* HEADER: Dynamic Room Name & Description */}
-      <header className="flex items-center gap-4 px-4 py-3 bg-white border-b shadow-sm sticky top-0 z-10">
-        <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-slate-100 rounded-full text-slate-600">
-          <MdArrowBack size={22} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-bold text-slate-900 truncate flex items-center gap-1 text-base md:text-lg">
-            <MdTag className="text-indigo-500" /> {roomInfo?.name || "Loading..."}
-          </h1>
-          <p className="text-xs text-slate-500 truncate">{roomInfo?.description || "Joining the conversation..."}</p>
+    <div className="flex flex-col h-screen bg-slate-50 w-full overflow-hidden">
+      <header className="flex items-center gap-4 px-4 py-3 bg-white border-b shadow-sm">
+        <button onClick={handleBack} className="p-2"><MdArrowBack size={22} /></button>
+        <div className="flex-1">
+          <h1 className="font-bold flex items-center gap-1"><MdTag /> {roomInfo?.name}</h1>
         </div>
-        <MdInfoOutline className="text-slate-400 cursor-pointer" size={20} />
       </header>
 
-      {/* MESSAGES AREA */}
-      <main className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-200">
-        {messages.map((msg, index) => {
-          const isMine = msg.senderId?._id === currentUserId || msg.senderId === currentUserId;
-          return (
-            <div key={msg._id || index} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-              {/* SENDER NAME */}
-              {!isMine && (
-                <span className="text-[10px] font-bold text-slate-500 ml-2 mb-1 uppercase tracking-wider">
-                  {msg.senderId?.username || "Guest"}
-                </span>
-              )}
-              
-              <div className={`max-w-[85%] md:max-w-[70%] px-4 py-2.5 rounded-2xl shadow-sm ${
-                isMine 
-                ? 'bg-indigo-600 text-white rounded-br-none' 
-                : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none'
-              }`}>
-                <p className="text-sm leading-relaxed">{msg.content}</p>
-                <div className={`text-[9px] mt-1 opacity-60 ${isMine ? 'text-right' : 'text-left'}`}>
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      <main className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* MESSAGES AREA */}
+        <main className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scroll-smooth">
+          {messages.map((msg, index) => {
+            const senderId = msg.senderId?._id || msg.senderId;
+            const senderName = msg.senderId?.username || "Guest";
+            const isMine = senderId === currentUserId;
+
+            return (
+              <div key={msg._id || index} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                {/* Message Bubble */}
+                <div className={`max-w-[85%] md:max-w-[70%] px-4 py-2.5 rounded-2xl shadow-sm ${isMine
+                    ? 'bg-indigo-600 text-white rounded-br-none'
+                    : 'bg-white text-slate-800 border border-slate-200 rounded-bl-none'
+                  }`}>
+                  <p className="text-sm leading-relaxed break-words">{msg.content}</p>
+
+                  {/* Metadata Row: Time + Name */}
+                  <div className={`text-[9px] mt-1.5 flex items-center gap-2 opacity-70 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                    <span className="font-bold uppercase tracking-tighter">
+                      • {isMine ? "You" : senderName}
+                    </span>
+                    <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+
+                  </div>
+
                 </div>
               </div>
-            </div>
-          );
-        })}
-        <div ref={scrollRef} />
+            );
+          })}
+          <div ref={scrollRef} />
+        </main>
       </main>
 
-      {/* INPUT AREA: Responsive padding */}
-      <footer className="p-3 md:p-4 bg-white border-t">
-        <form onSubmit={handleSend} className="max-w-5xl mx-auto flex gap-2">
-          <input 
-            type="text" 
+      <footer className="p-4 bg-white border-t">
+        <form onSubmit={handleSend} className="flex gap-2">
+          <input
+            type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Message..."
-            className="flex-1 bg-slate-100 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            className="flex-1 bg-slate-100 rounded-xl px-4 py-2 outline-none"
           />
-          <button type="submit" className="bg-indigo-600 text-white p-3 rounded-2xl hover:bg-indigo-700 active:scale-90 transition-all shadow-md">
-            <MdSend size={20} />
-          </button>
+          <button type="submit" className="bg-indigo-600 text-white p-2 rounded-xl"><MdSend /></button>
         </form>
       </footer>
     </div>

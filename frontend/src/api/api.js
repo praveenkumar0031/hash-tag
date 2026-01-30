@@ -21,6 +21,17 @@ export const loginapi=async({email,password})=>{
   }
 }
 
+
+export const getUserApi=async()=>{
+    try{
+    const res=await axios.get(`${api}/user`,getAuthHeader());
+    //console.log("USER Data ", res.data);
+    return res.data;
+    }catch(e){
+        console.error("USER data fetch Error:", e.response?.data || e.message);
+    throw e; 
+    }
+}
 export const signupapi=async({username,email,password,role})=>{
     try{
     const res=await axios.post(`${api}/signup`,{
@@ -81,8 +92,8 @@ export const joinRoomApi = async (id, password) => {
 };
 
 // 8. Leave a Room
-export const leaveRoomApi = async (id) => {
-  const res = await axios.patch(`${api}/room/leave/${id}`, {}, getAuthHeader());
+export const leaveRoomApi = async (roomid) => {
+  const res = await axios.patch(`${api}/room/leave/${roomid}`, {}, getAuthHeader());
   return res.data;
 };
 
