@@ -82,12 +82,14 @@ export const deleteRoomApi = async (id) => {
 export const changePrivacyApi = async (id, privacyData) => {
   // privacyData = { isprivate, password }
   const res = await axios.patch(`${api}/room/status/${id}`, privacyData, getAuthHeader());
+  
   return res.data;
 };
 
 // 7. Join a Room
 export const joinRoomApi = async (id, password) => {
   const res = await axios.patch(`${api}/room/join/${id}`, { password }, getAuthHeader());
+  //console.log(res)
   return res.data;
 };
 

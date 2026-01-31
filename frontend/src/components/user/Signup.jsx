@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { MdOutlineVisibility, MdOutlineVisibilityOff } from "react-icons/md";
 import { signupapi } from "../../api/api";
 import "./log.css";
+import { useNavigate } from "react-router-dom";
 
 const Signup = () => {
+  const navigate=useNavigate();
   const [signup, setSignup] = useState({
     username: "",
     email: "",
@@ -37,7 +39,7 @@ const Signup = () => {
         setMessage("Account created successfully 🎉");
         setType("success");
 
-        
+        navigate('/login');
         setSignup({
           username: "",
           email: "",

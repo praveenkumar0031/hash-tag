@@ -145,25 +145,41 @@ exports.joinRoom = async (req, res) => {
     try {
         const userId = req.userId;
         const roomId = req.params.id;
+        const {password}=req.body;
+        
         var existingroom = await room.findById({ _id: roomId });
+        
         if (!existingroom) {
             return res.status(404).json("room not found");
         }
-        if (existingroom.isprivate && !req.body.password) {
-            return res.status(400).json("room password required");
+        
 
-        }
+        const isOwner = existingroom.ownerId.toString() === userId.toString();
 
-        if (existingroom.memberId.includes(userId)) {
-            return res.status(200).json("User already in room");
-        }
-        if (existingroom.isprivate) {
-            const validpass = await bcrypt.compare(req.body.password, existingroom.password);
+        
+        if (!isOwner && existingroom.isprivate) {
+            
+            if (!existingroom.password) {
+                return res.status(500).json("Room has no password set");
+            }
+            if (!password) {
+                return res.status(400).json("room password required");
+            }
+
+
+            const validpass = await bcrypt.compare(password, existingroom.password);
             if (!validpass) {
                 return res.status(400).json("Invalid room password");
             }
         }
 
+        
+        if (existingroom.memberId.includes(userId)) {
+            
+            return res.status(200).json({ "room": existingroom, message: "User already in room" });
+        }
+
+        
         existingroom.memberId.push(userId);
         await existingroom.save()
         const io = req.app.get('socketio');
@@ -209,3 +225,68 @@ exports.leftRoom = async (req, res) => {
         res.status(500).json("server error");
     }
 }
+exports.getNearbyRoomsByOwner = async (req, res) => {
+    try {
+        const { lng, lat, distance } = req.query;
+
+        if (!lng || !lat) {
+            return res.status(400).json({ message: "Coordinates are required" });
+        }
+
+        const radiusInMeters = (parseFloat(distance) || 10) * 1000;
+
+        const results = await User.aggregate([
+            {
+                // Step 1: Find Owners near the center point
+                $geoNear: {
+                    near: {
+                        type: "Point",
+                        coordinates: [parseFloat(lng), parseFloat(lat)]
+                    },
+                    distanceField: "distanceToUser",
+                    maxDistance: radiusInMeters,
+                    spherical: true
+                }
+            },
+            {
+                // Step 2: Join with the Rooms collection
+                $lookup: {
+                    from: "rooms",           // The name of your Rooms collection in MongoDB
+                    localField: "_id",       // Owner's ID in User collection
+                    foreignField: "ownerId", // Field in Room collection referencing User
+                    as: "ownerRooms"
+                }
+            },
+            {
+                // Step 3: Remove users who don't have any rooms
+                $match: {
+                    "ownerRooms.0": { $exists: true }
+                }
+            },
+            {
+                // Step 4: Format output to see individual rooms
+                $unwind: "$ownerRooms"
+            },
+            {
+                // Step 5: Clean up the final object structure
+                $project: {
+                    _id: "$ownerRooms._id",
+                    roomName: "$ownerRooms.name",
+                    distance: "$distanceToUser",
+                    owner: {
+                        username: "$username",
+                        avatar: "$avatar"
+                    }
+                }
+            }
+        ]);
+
+        res.status(200).json({
+            success: true,
+            count: results.length,
+            data: results
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};

@@ -8,5 +8,5 @@ const roomSchema=mongoose.Schema({
     isprivate:{type:Boolean,required:true},
     password:{type:String}
 },{timestamps:true})
-    
+roomSchema.index({ updatedAt: 1 }, { expireAfterSeconds: 86400 });
 module.exports=mongoose.model("room",roomSchema);

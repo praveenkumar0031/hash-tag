@@ -7,7 +7,19 @@ const userSchema=mongoose.Schema({
     googleId:{type:String},
     role:{type:String,enum:["admin","user"],required:true},
     avatar:{type:String},
-    status:{type:String ,enum:["online","offline"]}
+    status:{type:String ,enum:["online","offline"]},
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], 
+            index: '2dsphere' // Essential for proximity searches
+        },
+        formattedAddress: String
+    }
 });
-
+userSchema.index({ location: "2dsphere" });
 module.exports=mongoose.model("user",userSchema);

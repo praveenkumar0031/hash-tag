@@ -2,15 +2,15 @@ const mongoose=require('mongoose')
 
 
 const msgSchema = mongoose.Schema({
-    // Change from Object to ObjectId and add 'ref'
+    
     roomId: {
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'room', // This must match your room model name
+        ref: 'room',
         required: true
     },
     senderId: {
         type: mongoose.Schema.Types.ObjectId, 
-        ref: 'user', // This must match your user model name
+        ref: 'user',
         required: true
     },
     content: {
@@ -18,6 +18,7 @@ const msgSchema = mongoose.Schema({
         required: true
     },
 }, { timestamps: true });
+msgSchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
 
 
 module.exports=mongoose.model("msg",msgSchema);
