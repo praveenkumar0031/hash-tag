@@ -13,55 +13,76 @@ const PasswordModal = ({ isOpen, roomName, onConfirm, onCancel }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center white/30  p-4">
-      <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center p-5 border-b">
-          <h3 className="font-bold text-slate-800">Private Room</h3>
-          <button onClick={onCancel} className="text-red-400 hover:text-red-600">
-            <MdClose size={20} />
-          </button>
-        </div>
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
+    <div className="bg-white rounded-[28px] w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+      
+      {/* Header */}
+      <div className="flex justify-between items-center p-5 border-b border-slate-50">
+        <h3 className="font-bold text-slate-800 flex items-center gap-2">
+          <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+          Private Room
+        </h3>
+        <button 
+          onClick={onCancel} 
+          className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all active:scale-90"
+        >
+          <MdClose size={20} />
+        </button>
+      </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="flex flex-col items-center mb-6">
-            <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-3">
-              <MdLock size={24} />
+      <form onSubmit={handleSubmit} className="p-8">
+        {/* Icon & Message */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative">
+            <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mb-4 rotate-3 transform">
+              <MdLock size={32} />
             </div>
-            <p className="text-sm text-slate-500 text-center">
-              Please enter the password to join <br />
-              <span className="font-bold text-slate-700">"{roomName}"</span>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
+              <div className="w-2 h-2 bg-amber-400 rounded-full" />
+            </div>
+          </div>
+          
+          <div className="text-center space-y-1">
+            <p className="text-sm text-slate-500">Access Restricted</p>
+            <p className="text-[15px] text-slate-700 font-medium">
+              Enter password for <span className="text-indigo-600 font-bold">"{roomName}"</span>
             </p>
           </div>
+        </div>
 
+        {/* Input Field */}
+        <div className="relative mb-6">
           <input
             type="password"
             autoFocus
             required
-            placeholder="Enter password"
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all mb-4"
+            placeholder="••••••••"
+            className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-center tracking-[0.3em] font-bold text-slate-700 placeholder:tracking-normal placeholder:font-normal"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+        </div>
 
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 px-4 py-2.5 bg-slate-50 font-semibold text-red-500 hover:bg-slate-100 rounded-xl transition-all"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-2 py-2.5 bg-slate-50 text-green-500 text-l font-semibold rounded-xl hover:bg-slate-100 transition-all"
-            >
-              Join 
-            </button>
-          </div>
-        </form>
-      </div>
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-4 py-3.5 bg-white border-2 border-slate-100 font-bold text-slate-500 hover:bg-slate-50 hover:text-slate-700 rounded-2xl transition-all active:scale-95"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="flex-1 px-4 py-3.5 bg-indigo-600 font-bold text-white rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            Join
+          </button>
+        </div>
+      </form>
     </div>
-  );
+  </div>
+);
 };
 
 export default PasswordModal;
