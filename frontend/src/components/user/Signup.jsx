@@ -66,6 +66,7 @@ const Signup = () => {
 
         {/* LEFT PANEL (DESKTOP ONLY) */}
         <div className="left-panel">
+          
           <div className="left-content">
             <h2>Welcome to Hashtag 👋</h2>
             <p className="description">

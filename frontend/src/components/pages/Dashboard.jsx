@@ -4,20 +4,22 @@ import { MdOutlineGroups, MdLock, MdPublic, MdAdd, MdDelete, MdEdit } from 'reac
 import { HiChatBubbleLeftRight } from "react-icons/hi2";
 import { FaSlackHash } from "react-icons/fa";
 import EmptyState from './EmptyState';
-import { AiFillApi } from "react-icons/ai";
 import { Link, useNavigate } from 'react-router-dom';
 import ConfirmModal from '../modal/ConfirmModal';
 import EditModal from '../modal/EditModal';
 import PasswordModal from '../modal/PasswordModal'
 import Toast from '../modal/Toast';
+import LocationRoom from '../user/LocationRoom';
 
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [rooms, setRooms] = useState([]);
+  
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
+  const [position, setPosition] = useState({ latitude: null, longitude: null });
 
   // Modal States
   const [passModal, setPassModal] = useState({ isOpen: false, roomId: null, roomName: '' });
@@ -27,7 +29,9 @@ const Dashboard = () => {
   useEffect(() => {
     fetchRooms();
     fetchUser();
+    
   }, []);
+  
 
   const fetchUser = async () => {
     try {
@@ -36,6 +40,28 @@ const Dashboard = () => {
     } catch (err) { console.error(err); }
   };
 
+  const getLocation = async() => {
+    if (!navigator.geolocation) {
+      console.error('Geolocation is not supported by your browser');
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setPosition({ latitude, longitude });
+        
+        console.log({ latitude, longitude } )
+      },
+      (err) => {
+        console.error(err);
+      }
+      
+    );
+    useEffect(()=>{
+    getLocation()
+  },[])
+  };
   const fetchRooms = async () => {
     try {
       setLoading(true);
@@ -51,7 +77,7 @@ const Dashboard = () => {
     finally { setLoading(false); }
   };
 
-  // --- DELETE HANDLERS ---
+  
   const openDeleteModal = (e, room) => {
     e.stopPropagation();
     setDeleteConfig({ isOpen: true, roomId: room._id, roomName: room.name });
@@ -193,6 +219,7 @@ return (
           </h1>
           <p className="text-slate-500">Join a room and start your story</p>
         </div>
+        
         {/* Only show top Create button if rooms exist */}
         {rooms.length > 0 && (
           <Link to={`/room/create`}>

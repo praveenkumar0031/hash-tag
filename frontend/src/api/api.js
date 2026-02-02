@@ -135,3 +135,15 @@ export const modifyMessageApi = async (msgId, content) => {
   );
   return res.data;
 };
+
+export const  getRoomsInRange=async({lng,lat})=>{
+  const res=await axios.get(
+    `${api}/user/nearby?lng=${lng}&${lat}`,getAuthHeader()
+  );
+}
+
+export const  setRange=async({lng,lat})=>{
+  const res=await axios.patch(
+    `${api}/user/location?lng=${lng}&${lat}`,getAuthHeader()
+  );
+}

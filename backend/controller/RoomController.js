@@ -1,6 +1,7 @@
 
 const msg = require('../model/message')
 const room = require('../model/room')
+const user=require('../model/user')
 const bcrypt = require('bcrypt')
 
 exports.createRoom = async (req, res) => {
@@ -225,6 +226,7 @@ exports.leftRoom = async (req, res) => {
         res.status(500).json("server error");
     }
 }
+
 exports.getNearbyRoomsByOwner = async (req, res) => {
     try {
         const { lng, lat, distance } = req.query;
@@ -235,7 +237,7 @@ exports.getNearbyRoomsByOwner = async (req, res) => {
 
         const radiusInMeters = (parseFloat(distance) || 10) * 1000;
 
-        const results = await User.aggregate([
+        const results = await user.aggregate([
             {
                 // Step 1: Find Owners near the center point
                 $geoNear: {
@@ -245,7 +247,8 @@ exports.getNearbyRoomsByOwner = async (req, res) => {
                     },
                     distanceField: "distanceToUser",
                     maxDistance: radiusInMeters,
-                    spherical: true
+                    spherical: true,
+                    key: "location"
                 }
             },
             {
