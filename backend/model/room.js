@@ -6,7 +6,18 @@ const roomSchema=mongoose.Schema({
     name:{type:String,required:true,unique:true},
     description:{type:String},
     isprivate:{type:Boolean,required:true},
-    password:{type:String}
+    password:{type:String},
+    location: {
+        type: {
+            type: String, 
+            enum: ['Point'], // 'location.type' must be 'Point'
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: true
+        }
+    }
 },{timestamps:true})
-roomSchema.index({ updatedAt: 1 }, { expireAfterSeconds: 86400 });
+roomSchema.index({ location: "2dsphere" },{ updatedAt: 1 }, { expireAfterSeconds: 86400 });
 module.exports=mongoose.model("room",roomSchema);

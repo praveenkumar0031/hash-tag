@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getAllRoomsApi, joinRoomApi, getUserApi, deleteRoomApi, updateRoomApi, changePrivacyApi } from '../../api/api';
-import { MdOutlineGroups, MdLock, MdPublic, MdAdd, MdDelete, MdEdit } from 'react-icons/md';
+import { MdOutlineGroups, MdLock, MdPublic, MdAdd, MdDelete, MdEdit, MdLocationOn,MdLocationOff } from 'react-icons/md';
 import { HiChatBubbleLeftRight } from "react-icons/hi2";
 import { FaSlackHash } from "react-icons/fa";
 import EmptyState from './EmptyState';
@@ -15,6 +15,7 @@ import LocationRoom from '../user/LocationRoom';
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [useLocation, setUseLocation] = useState(false);
   const [rooms, setRooms] = useState([]);
   
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,28 @@ const Dashboard = () => {
     } catch (err) { console.error(err); }
   };
 
+  const handleLocationToggle = (e) => {
+    const isChecked = e.target.checked;
+    if (isChecked) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            setFormData({
+                ...formData,
+                lng: pos.coords.longitude,
+                lat: pos.coords.latitude,
+                resetLocation: false
+            });
+            setUseLocation(true);
+        });
+    } else {
+        setFormData({
+            ...formData,
+            lng: null,
+            lat: null,
+            resetLocation: true // This tells the backend to $unset the location
+        });
+        setUseLocation(false);
+    }
+};  
   const getLocation = async() => {
     if (!navigator.geolocation) {
       console.error('Geolocation is not supported by your browser');
@@ -99,35 +122,39 @@ const Dashboard = () => {
   };
 
   const handleConfirmEdit = async (id, updatedData) => {
-    try {
-      // 1. Handle General Room Info (Name, Description)
-      const basicInfo = { name: updatedData.name, description: updatedData.description };
-      await updateRoomApi(id, basicInfo);
-      setToast({ show: true, message: `room updated !`, type: 'success' });
+  try {
+    // 1. Prepare the payload including location logic
+    const updatePayload = {
+      name: updatedData.name,
+      description: updatedData.description,
+      isprivate: updatedData.isprivate,
+      password: updatedData.password,
+      // Location Logic:
+      // If updatedData has resetLocation: true, we send that.
+      // Otherwise, if new coordinates are provided, we send them.
+      lng: updatedData.lng, 
+      lat: updatedData.lat,
+      resetLocation: updatedData.resetLocation 
+    };
 
-      // 2. Handle Privacy Change
-      const privacyInfo = {
-        isprivate: updatedData.isprivate,
-        password: updatedData.password
-      };
-      await changePrivacyApi(id, privacyInfo);
+    // 2. Call your existing update API
+    const updatedRoomFromServer = await updateRoomApi(id, updatePayload);
+    
+    setToast({ show: true, message: `Room updated successfully!`, type: 'success' });
 
-      // 3. Update Local State
-      setRooms((prev) =>
-        prev.map((r) =>
-          r._id === id
-            ? { ...r, ...basicInfo, isprivate: updatedData.isprivate }
-            : r
-        )
-      );
+    // 3. Update Local State
+    setRooms((prev) =>
+      prev.map((r) =>
+        r._id === id ? updatedRoomFromServer : r
+      )
+    );
 
-      setEditConfig({ isOpen: false, room: null });
-    } catch (err) {
-      console.error("Update failed", err);
-      setToast({ show: true, message: "Failed to update room settings.", type: 'error' });
-
-    }
-  };
+    setEditConfig({ isOpen: false, room: null });
+  } catch (err) {
+    console.error("Update failed", err);
+    setToast({ show: true, message: "Failed to update room settings.", type: 'error' });
+  }
+};
 
   const handleJoin = (id, isPrivate, ownerId, roomName) => {
     const isOwner = user?._id === ownerId || user?.id === ownerId;
@@ -249,8 +276,18 @@ return (
                         <MdOutlineGroups size={24} />
                       </div>
                       <div className="flex items-center gap-1">
+                        
                         {isOwner && (
                           <div className="flex gap-1 mr-2 border-r pr-2 border-slate-100">
+                            {/* QUICK LOCATION TOGGLE BUTTON */}        
+                            
+                                                                            <button
+                                                                                onClick={() => toggleRoomLocation(room)}
+                                                                                className={`p-1.5 rounded-full transition-all ${room.location ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:bg-slate-50'}`}
+                                                                                title={room.location ? "Remove Location" : "Set to Current Location"}
+                                                                            >
+                                                                                {room.location ? <MdLocationOn size={18} /> : <MdLocationOff size={18} />}
+                                                                            </button>
                             <button
                               onClick={(e) => openEditModal(e, room)}
                               className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
@@ -265,6 +302,7 @@ return (
                             </button>
                           </div>
                         )}
+                        
                         {room.isprivate ? (
                           <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">
                             PRIVATE <MdLock size={12} />

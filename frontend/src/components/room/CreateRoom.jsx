@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createRoomApi } from '../../api/api';
-import { MdOutlineChatBubble, MdLock, MdPublic, MdArrowBack } from 'react-icons/md';
+import { MdOutlineChatBubble, MdLock, MdPublic, MdArrowBack, MdLocationOn, MdLocationOff } from 'react-icons/md';
 
 const CreateRoom = () => {
   const navigate = useNavigate();
@@ -9,8 +9,12 @@ const CreateRoom = () => {
     name: '',
     description: '',
     isprivate: false,
-    password: ''
+    password: '',
+    lng: null, // New field
+    lat: null  // New field
   });
+  
+  const [useLocation, setUseLocation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,23 +26,59 @@ const CreateRoom = () => {
     }));
   };
 
+  // --- Location Handling Logic ---
+  const handleLocationToggle = (e) => {
+    const isChecked = e.target.checked;
+    
+    if (isChecked) {
+      setLoading(true);
+      setError('');
+      
+      if (!navigator.geolocation) {
+        setError("Geolocation is not supported by your browser.");
+        setUseLocation(false);
+        setLoading(false);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData(prev => ({
+            ...prev,
+            lng: position.coords.longitude,
+            lat: position.coords.latitude
+          }));
+          setUseLocation(true);
+          setLoading(false);
+        },
+        (err) => {
+          setError("Please enable location permissions to tag this room.");
+          setUseLocation(false);
+          setLoading(false);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      setUseLocation(false);
+      setFormData(prev => ({ ...prev, lng: null, lat: null }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
-    
+
     if (formData.isprivate && !formData.password) {
       return setError("Private rooms require a password.");
     }
 
     try {
       setLoading(true);
+      // Backend expects: { name, description, isprivate, password, lng, lat }
       const newRoom = await createRoomApi(formData);
-      console.log("Room Created:", newRoom);
-      
       navigate('/dashboard'); 
     } catch (err) {
-      setError(err.response?.data || "Failed to create room. Try a different name.");
+      setError(err.response?.data || "Failed to create room.");
     } finally {
       setLoading(false);
     }
@@ -46,8 +86,6 @@ const CreateRoom = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-      
-      {/* Back Button */}
       <button 
         onClick={() => navigate(-1)}
         className="mb-6 flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors"
@@ -71,32 +109,33 @@ const CreateRoom = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Room Name */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Room Name</label>
-            <input 
-              required
-              type="text"
-              name="name"
-              placeholder="e.g. Developers Hub"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-              onChange={handleChange}
-            />
+            <input required type="text" name="name" placeholder="e.g. Developers Hub" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" onChange={handleChange} />
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
-            <textarea 
-              name="description"
-              rows="3"
-              placeholder="What is this room about?"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none"
-              onChange={handleChange}
-            />
+            <textarea name="description" rows="2" placeholder="What is this room about?" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none" onChange={handleChange} />
           </div>
 
-          {/* Privacy Toggle */}
+          {/* --- Location Toggle --- */}
+          <div className="flex items-center justify-between p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+            <div className="flex items-center gap-3">
+              {useLocation ? <MdLocationOn className="text-indigo-600" /> : <MdLocationOff className="text-slate-400" />}
+              <div>
+                <p className="text-sm font-bold text-slate-700">Tag Current Location</p>
+                <p className="text-xs text-slate-500">
+                  {useLocation ? `Location Fixed: ${formData.lng?.toFixed(2)}, ${formData.lat?.toFixed(2)}` : "Help locals find your room"}
+                </p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" checked={useLocation} className="sr-only peer" onChange={handleLocationToggle} />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+            </label>
+          </div>
+
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
             <div className="flex items-center gap-3">
               {formData.isprivate ? <MdLock className="text-amber-500" /> : <MdPublic className="text-emerald-500" />}
@@ -106,37 +145,24 @@ const CreateRoom = () => {
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                name="isprivate" 
-                className="sr-only peer" 
-                onChange={handleChange}
-              />
+              <input type="checkbox" name="isprivate" className="sr-only peer" onChange={handleChange} />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
             </label>
           </div>
 
-          {/* Conditional Password Field */}
           {formData.isprivate && (
-            <div className="animate-in slide-in-from-top-2 duration-200">
+            <div className="animate-in slide-in-from-top-2">
               <label className="block text-sm font-semibold text-slate-700 mb-2">Room Password</label>
-              <input 
-                required
-                type="password"
-                name="password"
-                placeholder="Enter room password"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                onChange={handleChange}
-              />
+              <input required type="password" name="password" placeholder="Enter room password" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" onChange={handleChange} />
             </div>
           )}
 
           <button 
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-[0.98] disabled:bg-indigo-400"
+            type="submit" 
+            disabled={loading} 
+            className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition-all active:scale-[0.98] disabled:bg-indigo-400"
           >
-            {loading ? "Creating..." : "Launch Room"}
+            {loading ? "Processing..." : "Launch Room"}
           </button>
         </form>
       </div>

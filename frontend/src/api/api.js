@@ -49,7 +49,7 @@ export const signupapi=async({username,email,password,role})=>{
     }
 }
 export const createRoomApi = async (roomData) => {
-  // roomData = { name, description, isprivate, password }
+  // roomData = { name, description, isprivate, password,lng,lat }
   const res = await axios.post(`${api}/room/create`, roomData, getAuthHeader());
   return res.data;
 };

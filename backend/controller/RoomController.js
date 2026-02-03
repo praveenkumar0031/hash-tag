@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt')
 exports.createRoom = async (req, res) => {
     try {
 
-        const { name, description, isprivate } = req.body;
+        const { name, description, isprivate,lng,lat } = req.body;
         const ownerId = req.userId;
         const memberId = [ownerId];
 
@@ -23,7 +23,10 @@ exports.createRoom = async (req, res) => {
             else
                 return res.status(404).json("Missing password ");
         }
-        const newroom = new room({ ownerId, name, memberId, description, isprivate, password });
+        const newroom = new room({ ownerId, name, memberId, description, isprivate, password,location: {
+                type: "Point",
+                coordinates: [parseFloat(lng), parseFloat(lat)] // [Longitude, Latitude]
+            } });
         await newroom.save();
         const io = req.app.get('socketio');
         io.emit('room-list-update', newroom);
@@ -37,7 +40,7 @@ exports.updateRoom = async (req, res) => {
     try {
         const ownerId = req.userId;
         const roomId = req.params.id;
-        const { name, description, isprivate, password: user_pass } = req.body;
+        const { name, description, isprivate, password: user_pass, lng, lat, resetLocation } = req.body;
 
         // 1. Prepare update object
         const updateData = {
@@ -46,16 +49,34 @@ exports.updateRoom = async (req, res) => {
             isprivate
         };
 
-        // 2. Only hash and update password if a new one is provided
+        // 2. Handle Location Set/Reset
+        if (resetLocation) {
+            // Remove location data (Note: ensure your schema allows location to be null/undefined)
+            updateData.location = undefined; 
+        } else if (lng !== undefined && lat !== undefined) {
+            // Update to new coordinates
+            updateData.location = {
+                type: "Point",
+                coordinates: [parseFloat(lng), parseFloat(lat)]
+            };
+        }
+
+        // 3. Password logic
         if (isprivate === true && user_pass) {
             updateData.password = await bcrypt.hash(user_pass, 10);
         }
 
-        // 3. Find and Update
-        // { new: true } returns the modified document rather than the original
+        // 4. Find and Update
+        // Use $set for standard fields and $unset if location is being removed
+        const updateQuery = { $set: updateData };
+        if (resetLocation) {
+            updateQuery.$unset = { location: "" };
+            delete updateData.location; // Clean up the set object
+        }
+
         const updatedRoom = await room.findOneAndUpdate(
             { _id: roomId, ownerId: ownerId }, 
-            { $set: updateData },
+            updateQuery,
             { new: true } 
         );
 
@@ -63,7 +84,7 @@ exports.updateRoom = async (req, res) => {
             return res.status(404).json("Room not found or you are not the owner");
         }
 
-        // 4. Socket Emit for Real-time Dashboard Updates
+        // 5. Socket Emit
         const io = req.app.get('socketio');
         if (io) {
             io.emit("room-updated", updatedRoom);
@@ -74,8 +95,7 @@ exports.updateRoom = async (req, res) => {
         console.error("Room update error:", e);
         res.status(500).json("Server error");
     }
-};
-exports.getRooms = async (req, res) => {
+};exports.getRooms = async (req, res) => {
     try {
         const existingroom = await room.find().sort({ createdAt: -1 });//resently created first
         if (!existingroom) {
@@ -283,7 +303,7 @@ exports.getNearbyRoomsByOwner = async (req, res) => {
                 }
             }
         ]);
-
+        console.log(res)
         res.status(200).json({
             success: true,
             count: results.length,

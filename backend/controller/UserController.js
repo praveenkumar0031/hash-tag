@@ -18,7 +18,7 @@ exports.getUsersInRange = async (req, res) => {
                     $maxDistance: radiusInMeters
                 }
             }
-        });
+        }).select('username _id').lean();
 
         res.status(200).json({
             success: true,
