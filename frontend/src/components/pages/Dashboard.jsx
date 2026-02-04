@@ -40,29 +40,7 @@ const Dashboard = () => {
       setUser(data);
     } catch (err) { console.error(err); }
   };
-
-  const handleLocationToggle = (e) => {
-    const isChecked = e.target.checked;
-    if (isChecked) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-            setFormData({
-                ...formData,
-                lng: pos.coords.longitude,
-                lat: pos.coords.latitude,
-                resetLocation: false
-            });
-            setUseLocation(true);
-        });
-    } else {
-        setFormData({
-            ...formData,
-            lng: null,
-            lat: null,
-            resetLocation: true // This tells the backend to $unset the location
-        });
-        setUseLocation(false);
-    }
-};  
+  
   const getLocation = async() => {
     if (!navigator.geolocation) {
       console.error('Geolocation is not supported by your browser');
@@ -136,6 +114,7 @@ const Dashboard = () => {
       lat: updatedData.lat,
       resetLocation: updatedData.resetLocation 
     };
+    console.log(updatePayload)
 
     // 2. Call your existing update API
     const updatedRoomFromServer = await updateRoomApi(id, updatePayload);
@@ -192,6 +171,41 @@ const Dashboard = () => {
       setPassModal({ isOpen: false, roomId: null, roomName: '' });
     }
   };
+
+  const toggleRoomLocation = (room) => {
+  // Check if room currently has coordinates (assuming GeoJSON structure: location.coordinates)
+  const hasLocation = !!(room.location && room.location.coordinates);
+
+  if (hasLocation) {
+    // If it has location, we "Reset" it
+    handleConfirmEdit(room._id, {
+      ...room,           // Pass current name, description, etc.
+      lng: null,         // Explicitly nullify
+      lat: null,         // Explicitly nullify
+      resetLocation: true
+    });
+  } else {
+    // If it doesn't, we "Set" it to current position
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        handleConfirmEdit(room._id, {
+          ...room,       // Pass current name, description, etc.
+          lng: pos.coords.longitude,
+          lat: pos.coords.latitude,
+          resetLocation: false
+        });
+      },
+      (err) => {
+        setToast({ 
+          show: true, 
+          message: "Please enable location permissions.", 
+          type: 'error' 
+        });
+      },
+      { enableHighAccuracy: true }
+    );
+  }
+};
 return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-10">
       {/* GLOBAL MODALS & NOTIFICATIONS */}
@@ -283,11 +297,12 @@ return (
                             
                                                                             <button
                                                                                 onClick={() => toggleRoomLocation(room)}
-                                                                                className={`p-1.5 rounded-full transition-all ${room.location ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:bg-slate-50'}`}
+                                                                                className={`p-1.5 rounded-full transition-all ${room.location ? 'text-orange-600 bg-orange-50' : 'text-slate-400 hover:bg-slate-50'}`}
                                                                                 title={room.location ? "Remove Location" : "Set to Current Location"}
                                                                             >
-                                                                                {room.location ? <MdLocationOn size={18} /> : <MdLocationOff size={18} />}
+                                                                                {room.location ? <MdLocationOn  size={18} /> : <MdLocationOff size={18} />}
                                                                             </button>
+                                                                            
                             <button
                               onClick={(e) => openEditModal(e, room)}
                               className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-all"
@@ -302,6 +317,7 @@ return (
                             </button>
                           </div>
                         )}
+                        {(!isOwner&& room.location) && <MdLocationOn size={15} />}
                         
                         {room.isprivate ? (
                           <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">
@@ -312,6 +328,8 @@ return (
                             PUBLIC <MdPublic size={12} />
                           </span>
                         )}
+                        
+                        
                       </div>
                     </div>
                     <h3 className="text-xl font-bold text-slate-800 mb-2 truncate">{room.name}</h3>
@@ -319,14 +337,16 @@ return (
                   </div>
 
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
-                    <span className="text-xs text-slate-400">{room.memberId?.length || 0} Members</span>
+                    <span className="text-xs text-slate-400">{room.memberId?.length || 0} Members </span>
                     <button
                       onClick={() => handleJoin(room._id, room.isprivate, room.ownerId, room.name)}
                       className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
                     >
                       Join <HiChatBubbleLeftRight size={18} />
                     </button>
+                    
                   </div>
+                  
                 </div>
               );
             })}

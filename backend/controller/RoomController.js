@@ -23,10 +23,24 @@ exports.createRoom = async (req, res) => {
             else
                 return res.status(404).json("Missing password ");
         }
-        const newroom = new room({ ownerId, name, memberId, description, isprivate, password,location: {
+        //console.log(lng +" "+lat);
+        var roomData = {
+            ownerId,
+            name,
+            memberId,
+            description,
+            isprivate,
+            password
+        };
+
+        // 2. Only add location if BOTH lng and lat are present and not null
+        if (lng !== null && lat !== null && !isNaN(lng) && !isNaN(lat)) {
+            roomData.location = {
                 type: "Point",
-                coordinates: [parseFloat(lng), parseFloat(lat)] // [Longitude, Latitude]
-            } });
+                coordinates: [parseFloat(lng), parseFloat(lat)]
+            };
+        }
+        const newroom = new room(roomData);
         await newroom.save();
         const io = req.app.get('socketio');
         io.emit('room-list-update', newroom);
@@ -247,69 +261,34 @@ exports.leftRoom = async (req, res) => {
     }
 }
 
-exports.getNearbyRoomsByOwner = async (req, res) => {
+exports.getRoomsInRange = async (req, res) => {
     try {
         const { lng, lat, distance } = req.query;
 
         if (!lng || !lat) {
-            return res.status(400).json({ message: "Coordinates are required" });
+            return res.status(400).json({ message: "Longitude and Latitude are required" });
         }
-
         const radiusInMeters = (parseFloat(distance) || 10) * 1000;
 
-        const results = await user.aggregate([
-            {
-                // Step 1: Find Owners near the center point
-                $geoNear: {
-                    near: {
+        const rooms = await room.find({
+            location: {
+                $near: {
+                    $geometry: {
                         type: "Point",
                         coordinates: [parseFloat(lng), parseFloat(lat)]
                     },
-                    distanceField: "distanceToUser",
-                    maxDistance: radiusInMeters,
-                    spherical: true,
-                    key: "location"
-                }
-            },
-            {
-                // Step 2: Join with the Rooms collection
-                $lookup: {
-                    from: "rooms",           // The name of your Rooms collection in MongoDB
-                    localField: "_id",       // Owner's ID in User collection
-                    foreignField: "ownerId", // Field in Room collection referencing User
-                    as: "ownerRooms"
-                }
-            },
-            {
-                // Step 3: Remove users who don't have any rooms
-                $match: {
-                    "ownerRooms.0": { $exists: true }
-                }
-            },
-            {
-                // Step 4: Format output to see individual rooms
-                $unwind: "$ownerRooms"
-            },
-            {
-                // Step 5: Clean up the final object structure
-                $project: {
-                    _id: "$ownerRooms._id",
-                    roomName: "$ownerRooms.name",
-                    distance: "$distanceToUser",
-                    owner: {
-                        username: "$username",
-                        avatar: "$avatar"
-                    }
+                    $maxDistance: radiusInMeters
                 }
             }
-        ]);
-        console.log(res)
+        });
+
         res.status(200).json({
             success: true,
-            count: results.length,
-            data: results
+            count: rooms.length,
+            data: rooms
         });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+

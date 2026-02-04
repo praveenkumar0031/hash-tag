@@ -11,11 +11,12 @@ const roomSchema=mongoose.Schema({
         type: {
             type: String, 
             enum: ['Point'], // 'location.type' must be 'Point'
-            default: 'Point'
+            
+            required: function() { return this.location && this.location.coordinates; }
         },
         coordinates: {
             type: [Number], // [longitude, latitude]
-            required: true
+            required: function() { return this.location && this.location.type; }
         }
     }
 },{timestamps:true})

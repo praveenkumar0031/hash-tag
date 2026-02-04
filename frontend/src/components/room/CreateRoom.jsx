@@ -36,7 +36,7 @@ const CreateRoom = () => {
       
       if (!navigator.geolocation) {
         setError("Geolocation is not supported by your browser.");
-        setUseLocation(false);
+        setUseLocation(isChecked);
         setLoading(false);
         return;
       }
@@ -59,7 +59,7 @@ const CreateRoom = () => {
         { enableHighAccuracy: true }
       );
     } else {
-      setUseLocation(false);
+      
       setFormData(prev => ({ ...prev, lng: null, lat: null }));
     }
   };
@@ -75,7 +75,15 @@ const CreateRoom = () => {
     try {
       setLoading(true);
       // Backend expects: { name, description, isprivate, password, lng, lat }
-      const newRoom = await createRoomApi(formData);
+      const payload = {
+        ...formData,
+        // Ensure password is empty string if public
+        password: formData.isprivate ? formData.password : '',
+        // Ensure lat/lng are null if location is toggled off
+        lat: useLocation ? formData.lat : null,
+        lng: useLocation ? formData.lng : null,
+      };
+      await createRoomApi(payload);
       navigate('/dashboard'); 
     } catch (err) {
       setError(err.response?.data || "Failed to create room.");

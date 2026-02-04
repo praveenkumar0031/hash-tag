@@ -1,11 +1,13 @@
 import React from 'react'
 import Login from './components/user/Login'
 import Signup from './components/user/Signup'
-import Room from './components/room/Room'
+//import Room from './components/room/Room'
 import Dashboard from './components/pages/Dashboard'
 import CreateRoom from './components/room/CreateRoom'
 import Chat from './components/pages/Chat'
 import {Routes,Route} from 'react-router-dom'
+
+import Room from './components/room/Room'
 const App = () => {
   return (
     <div>
@@ -15,7 +17,7 @@ const App = () => {
         <Route path='/dashboard' element={<Dashboard/>}></Route>
         <Route path='room/:roomId' element={<Chat/>}></Route>
         <Route path='/room/create' element={<CreateRoom/>}></Route>
-        
+        <Route path='/nearby/room' element={<Room/>}></Route>
         <Route path='/' element={<Login/>}></Route>
       </Routes>
     </div>
