@@ -1,6 +1,6 @@
-import React from 'react'
+
 import { getLocalRooms } from '../../api/api'
-import { useState } from 'react';
+import { useState,useEffect } from 'react';
 const Room = () => {
     const [rooms,setRooms]=useSatate();
     const updated={
@@ -8,8 +8,12 @@ const Room = () => {
         lat:11,
         diatance:1
     }
-    const getroom= getLocalRooms(updated);
-    console.log(getroom)
+    useEffect(()=>{
+      const getroom= getLocalRooms(updated);
+          console.log(getroom)
+    },[])
+    
+    
   return (
 
     <div>Room</div>
