@@ -9,8 +9,8 @@ import ConfirmModal from '../modal/ConfirmModal';
 import EditModal from '../modal/EditModal';
 import PasswordModal from '../modal/PasswordModal'
 import Toast from '../modal/Toast';
-import LocationRoom from '../user/LocationRoom';
-
+import LocalRoomSection from '../room/LocalRoomSection';
+import { SiGroupme } from "react-icons/si";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -162,7 +162,7 @@ const Dashboard = () => {
       } else {
         setToast({
           show: true,
-          message: `comp${err.response?.data || "Error joining room"}`,
+          message: `${err.response?.data || "Error joining room"}`,
           type: 'error'
         });
       }
@@ -259,6 +259,7 @@ return (
              Hashtag
           </h1>
           <p className="text-slate-500">Join a room and start your story</p>
+          
         </div>
         
         {/* Only show top Create button if rooms exist */}
@@ -273,6 +274,8 @@ return (
 
       {/* CONTENT AREA */}
       <div className="max-w-6xl mx-auto">
+        <LocalRoomSection/>
+        <h2 style={styles.sectionTitle} className='flex gap-2' > General Rooms <SiGroupme size={20}/></h2>
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-white-600"></div>
@@ -361,5 +364,7 @@ return (
     </div>
   );
 };
+
+const styles={sectionTitle: { fontSize: '0.95rem', fontWeight: '600', color: '#334155', margin: 0 },}
 
 export default Dashboard;

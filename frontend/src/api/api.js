@@ -147,6 +147,8 @@ export const  setRange=async({lng,lat})=>{
     `${api}/user/location?lng=${lng}&${lat}`,getAuthHeader()
   );
 }
-export const getLocalRooms=async({lng,lat,dis})=>{
-  const res=await axios.get(`${api}/room/nearby?lng=${lng}&lat=${lat}&distance=${dis}`) ;
+export const getLocalRooms=async({lng,lat,distance})=>{
+  const res=await axios.get(`${api}/room/nearby?lng=${lng}&lat=${lat}&distance=${distance}`,getAuthHeader()) ;
+  console.log(res.data);
+  return res.data;
 }
