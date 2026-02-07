@@ -2,6 +2,8 @@ import { getLocalRooms } from '../../api/api';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiChatBubbleLeftRight } from "react-icons/hi2";
+import { IoIosArrowDropdownCircle } from "react-icons/io";
+
 const LocalRoomSection = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ const LocalRoomSection = () => {
           ...styles.arrow,
           transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
         }}>
-          ▼
+          <IoIosArrowDropdownCircle size={30}/>
         </div>
       </div>
 
@@ -55,7 +57,9 @@ const LocalRoomSection = () => {
                     <p style={styles.smallRoomDesc}>{room.description}</p>
                   </div>
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
-                                      
+                                      <div style={styles.meta}>
+                    <small>Created: {new Date(room.createdAt).toLocaleDateString()}</small>
+                  </div>
                                       <button
                                         onClick={() => handleJoin(room._id, room.isprivate, room.ownerId, room.name)}
                                         className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
@@ -127,7 +131,7 @@ const styles = {
     justifyContent: 'space-between',
     gap: '8px'
   },
-  smallRoomName: { fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', margin: 0 },
+  smallRoomName: { fontSize: '0.90rem', fontWeight: '700', color: '#1e293b', margin: 0 },
   smallRoomDesc: { 
     fontSize: '0.7rem', 
     color: '#64748b', 
@@ -149,7 +153,8 @@ const styles = {
     width: '100%'
   },
   statusText: { fontSize: '0.75rem', color: '#94a3b8', padding: '10px 0' },
-  emptyText: { fontSize: '0.75rem', color: '#94a3b8', padding: '10px 0', textAlign: 'center' }
+  emptyText: { fontSize: '0.75rem', color: '#94a3b8', padding: '10px 0', textAlign: 'center' },
+  meta: { color: '#9ca3af' },
 };
 
 export default LocalRoomSection;
