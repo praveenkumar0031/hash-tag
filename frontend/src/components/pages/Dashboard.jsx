@@ -23,7 +23,7 @@ const Dashboard = () => {
   const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
   const [position, setPosition] = useState({ latitude: null, longitude: null });
 
-  // Modal States
+  
   const [passModal, setPassModal] = useState({ isOpen: false, roomId: null, roomName: '' });
   const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, roomId: null, roomName: '' });
   const [editConfig, setEditConfig] = useState({ isOpen: false, room: null });
@@ -94,7 +94,7 @@ const Dashboard = () => {
     } catch (err) { console.error(err); }
   };
 
-  // --- EDIT HANDLERS ---
+  
   const openEditModal = (e, room) => {
     e.stopPropagation();
     setEditConfig({ isOpen: true, room });
@@ -102,27 +102,25 @@ const Dashboard = () => {
 
   const handleConfirmEdit = async (id, updatedData) => {
     try {
-      // 1. Prepare the payload including location logic
+      
       const updatePayload = {
         name: updatedData.name,
         description: updatedData.description,
         isprivate: updatedData.isprivate,
         password: updatedData.password,
-        // Location Logic:
-        // If updatedData has resetLocation: true, we send that.
-        // Otherwise, if new coordinates are provided, we send them.
+        
         lng: updatedData.lng,
         lat: updatedData.lat,
         resetLocation: updatedData.resetLocation
       };
       console.log(updatePayload)
 
-      // 2. Call your existing update API
+      
       const updatedRoomFromServer = await updateRoomApi(id, updatePayload);
 
       setToast({ show: true, message: `Room updated successfully!`, type: 'success' });
 
-      // 3. Update Local State
+      
       setRooms((prev) =>
         prev.map((r) =>
           r._id === id ? updatedRoomFromServer : r
@@ -140,18 +138,18 @@ const Dashboard = () => {
     const isOwner = user?._id === ownerId || user?.id === ownerId;
 
     if (isPrivate && !isOwner) {
-      // Instead of prompt, we open our custom modal
+      
       setPassModal({ isOpen: true, roomId: id, roomName });
     } else {
-      // If public or owner, join immediately with null password
+      
       executeJoin(id, null);
     }
   };
 
-  // 3. The Execution function (handles the actual API call)
+  
   const executeJoin = async (id, password) => {
     try {
-      // Note: Wrapping pass in an object if your API expects { password: '...' }
+      
 
       await joinRoomApi(id, password);
 
@@ -168,29 +166,29 @@ const Dashboard = () => {
         });
       }
     } finally {
-      // Always close the modal after the attempt
+      
       setPassModal({ isOpen: false, roomId: null, roomName: '' });
     }
   };
 
   const toggleRoomLocation = (room) => {
-    // Check if room currently has coordinates (assuming GeoJSON structure: location.coordinates)
+    
     const hasLocation = !!(room.location && room.location.coordinates);
 
     if (hasLocation) {
-      // If it has location, we "Reset" it
+      
       handleConfirmEdit(room._id, {
-        ...room,           // Pass current name, description, etc.
-        lng: null,         // Explicitly nullify
-        lat: null,         // Explicitly nullify
+        ...room,           
+        lng: null,        
+        lat: null,         
         resetLocation: true
       });
     } else {
-      // If it doesn't, we "Set" it to current position
+      
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           handleConfirmEdit(room._id, {
-            ...room,       // Pass current name, description, etc.
+            ...room,  
             lng: pos.coords.longitude,
             lat: pos.coords.latitude,
             resetLocation: false
@@ -265,12 +263,21 @@ const Dashboard = () => {
 
         {/* Only show top Create button if rooms exist */}
         {rooms.length > 0 && (
-          <Link to={`/room/create`}>
-            <button className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-indigo-700 transition-all shadow-lg">
-              <MdAdd size={20} /> Create Room
-            </button>
-          </Link>
-        )}
+  <Link to={`/room/create`}>
+    <button className="
+      /* Mobile: Floating Action Button (FAB) */
+      fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full flex items-center justify-center
+      /* Desktop: Standard Rectangular Button */
+      md:static md:h-auto md:w-auto md:rounded-xl md:px-5 md:py-2.5 md:flex-row
+      
+      bg-indigo-600 text-white font-semibold shadow-2xl
+      hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all
+    ">
+      <MdAdd size={28} className="md:size-5" />
+      <span className="hidden md:inline ml-2">Create Room</span>
+    </button>
+  </Link>
+)}
       </div>
 
       {/* CONTENT AREA */}

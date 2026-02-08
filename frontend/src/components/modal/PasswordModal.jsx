@@ -9,7 +9,7 @@ const PasswordModal = ({ isOpen, roomName, onConfirm, onCancel }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onConfirm(password);
-    setPassword(''); // Clear for next time
+    setPassword(''); 
   };
 
   return (
