@@ -1,3 +1,3 @@
-Tea-Talks is a time-bound social messaging platform designed for individuals looking to maximize their breaks. Unlike traditional chat apps where conversations live forever in cluttered lists, Tea-Talks focuses on the now.
+Hash-Tag is a time-bound social messaging platform designed for individuals looking to maximize their breaks. Unlike traditional chat apps where conversations live forever in cluttered lists, Hash-Tag focuses on the now.
 
 Users join topic-specific "lounges" based on their current interests—ranging from tech trends to random shower thoughts. The twist? Every room exists only within a specific time frame. This creates a high-engagement, "pop-up" social experience that encourages genuine human connection and spontaneous thought-sharing without the digital footprint.
