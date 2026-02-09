@@ -20,8 +20,6 @@ const roomSchema=mongoose.Schema({
         }
     }
 },{timestamps:true})
-roomSchema.index(
-    { location: "2dsphere", updatedAt: 1 }, 
-    { expireAfterSeconds: 86400 }
-);
+roomSchema.index({ location: "2dsphere" });
+roomSchema.index({ updatedAt: 1 }, { expireAfterSeconds: 86400 });
 module.exports=mongoose.model("room",roomSchema);
