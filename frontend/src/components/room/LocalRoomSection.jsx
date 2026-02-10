@@ -1,14 +1,20 @@
-import { getLocalRooms } from '../../api/api';
+import { getLocalRooms, joinRoomApi } from '../../api/api';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiChatBubbleLeftRight } from "react-icons/hi2";
 import { IoIosArrowDropdownCircle } from "react-icons/io";
+import { MdLock, MdVerified } from 'react-icons/md'; // Added Verified for Owner icon
+import PasswordModal from '../modal/PasswordModal';
+import Toast from '../modal/Toast';
 
-const LocalRoomSection = () => {
+const LocalRoomSection = ({ user }) => { // Receiving 'user' from Dashboard
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+
+  const [passModal, setPassModal] = useState({ isOpen: false, roomId: null, roomName: '' });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
 
   const queryParams = { lng: 77.07, lat: 11.04, distance: 1 };
 
@@ -28,8 +34,54 @@ const LocalRoomSection = () => {
     fetchRooms();
   }, []);
 
+  // --- THE OWNER BYPASS LOGIC ---
+  const handleJoin = (id, isPrivate, ownerId, roomName) => {
+    // Check if the current user is the owner
+    const currentUserId = user?._id || user?.id;
+    const isOwner = currentUserId === ownerId;
+
+    console.log(`Checking Ownership - User: ${currentUserId}, Owner: ${ownerId}, Match: ${isOwner}`);
+
+    if (isPrivate && !isOwner) {
+      // If private AND NOT the owner, show the password modal
+      setPassModal({ isOpen: true, roomId: id, roomName });
+    } else {
+      // If public OR the user is the owner, join immediately
+      executeJoin(id, ""); 
+    }
+  };
+
+  const executeJoin = async (id, password) => {
+    try {
+      await joinRoomApi(id, password || "");
+      navigate(`/room/${id}`);
+    } catch (err) {
+      setToast({
+        show: true,
+        message: err.response?.data?.message || "Error joining room",
+        type: 'error'
+      });
+    } finally {
+      setPassModal({ isOpen: false, roomId: null, roomName: '' });
+    }
+  };
+
   return (
     <section style={styles.sectionContainer}>
+      <PasswordModal
+        isOpen={passModal.isOpen}
+        roomName={passModal.roomName}
+        onCancel={() => setPassModal({ ...passModal, isOpen: false })}
+        onConfirm={(password) => executeJoin(passModal.roomId, password)}
+      />
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
+
       <div style={styles.header} onClick={() => setIsOpen(!isOpen)}>
         <div style={styles.titleWrapper}>
           <div style={styles.pulseDot}></div>
@@ -50,26 +102,36 @@ const LocalRoomSection = () => {
             <div style={styles.statusText}>Locating...</div>
           ) : rooms.length > 0 ? (
             <div style={styles.compactGrid}>
-              {rooms.map((room) => (
-                <div key={room._id} style={styles.smallCard}>
-                  <div style={styles.cardContent}>
-                    <h3 style={styles.smallRoomName}>{room.name}</h3>
-                    <p style={styles.smallRoomDesc}>{room.description}</p>
+              {rooms.map((room) => {
+                // Determine owner status for UI styling
+                const isOwner = (user?._id || user?.id) === room.ownerId;
+                
+                return (
+                  <div key={room._id} style={styles.smallCard}>
+                    <div style={styles.cardContent}>
+                      <div className="flex justify-between items-start">
+                         <h3 style={styles.smallRoomName}>{room.name}</h3>
+                         <div className="flex gap-1">
+                            {isOwner && <MdVerified size={14} className="text-blue-500" title="You own this" />}
+                            {room.isprivate && <MdLock size={14} className="text-amber-500" />}
+                         </div>
+                      </div>
+                      <p style={styles.smallRoomDesc}>{room.description}</p>
+                    </div>
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
+                      <div style={styles.meta}>
+                        <small>{new Date(room.createdAt).toLocaleDateString()}</small>
+                      </div>
+                      <button
+                        onClick={() => handleJoin(room._id, room.isprivate, room.ownerId, room.name)}
+                        className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                      >
+                        {isOwner ? 'Enter' : 'Join'} <HiChatBubbleLeftRight size={18} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
-                                      <div style={styles.meta}>
-                    <small>Created: {new Date(room.createdAt).toLocaleDateString()}</small>
-                  </div>
-                                      <button
-                                        onClick={() => handleJoin(room._id, room.isprivate, room.ownerId, room.name)}
-                                        className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
-                                      >
-                                        Join <HiChatBubbleLeftRight size={18} />
-                                      </button>
-                                      
-                                    </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div style={styles.emptyText}>No rooms nearby.</div>
@@ -79,6 +141,10 @@ const LocalRoomSection = () => {
     </section>
   );
 };
+
+// ... (Your styles remain the same)
+
+
 
 const styles = {
   sectionContainer: {

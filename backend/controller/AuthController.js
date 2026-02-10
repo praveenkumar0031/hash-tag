@@ -1,7 +1,33 @@
 const user =require('../model/user');
 const bcrypt=require('bcrypt');
 const jwt =require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+exports.oAuth=async (req, res) => {
+  const { token } = req.body;
 
+  try {
+    // Verify the token with Google
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const { email, name, picture } = ticket.getPayload();
+
+    // Check if user exists in your DB, if not, create them
+    let oAuthuser = await user.findOne({ email });
+    if (!oAuthuser) {
+      oAuthuser = await user.create({ email, name, avatar: picture });
+    }
+
+    // Generate your own JWT for the session
+    const appToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    res.json({ token: appToken });
+
+  } catch (error) {
+    res.status(401).send("Invalid Google Token");
+  }
+}
 
 exports.registerUser = async (req, res) => {
     try {
