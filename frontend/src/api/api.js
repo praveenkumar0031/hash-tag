@@ -1,4 +1,5 @@
 import axios from'axios'
+import { useGoogleLogin } from '@react-oauth/google';
 const api=import.meta.env.VITE_BACKEND_API;
 
 
@@ -152,3 +153,16 @@ export const getLocalRooms=async({lng,lat,distance})=>{
   console.log(res.data);
   return res.data;
 }
+export const verifyGoogleCode = async (code) => {
+    const response = await axios.post(`${api}/auth/google`, { code });
+//     axios.interceptors.request.use((config) => {
+//   const token = localStorage.getItem('token');
+//   // Only add header if token exists and is NOT the string "undefined"
+//   if (token && token !== "undefined") {
+//     config.headers.Authorization = `Bearer ${token}`;
+//   }
+//   return config;
+// });
+    return response.data;
+};
+

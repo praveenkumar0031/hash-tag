@@ -3,9 +3,9 @@ const mongoose=require("mongoose");
 const userSchema=mongoose.Schema({
     username:{type:String,required:true,unique:true},
     email:{type:String,required:true,unique:true},
-    password:{type:String},
+    password:{type:String,required: false},
     googleId:{type:String},
-    role:{type:String,enum:["admin","user"],required:true},
+    role:{type:String,enum:["admin","user"],required:true,default:"user"},
     avatar:{type:String},
     status:{type:String ,enum:["online","offline"]},
     location: {

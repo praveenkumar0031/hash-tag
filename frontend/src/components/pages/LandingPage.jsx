@@ -1,10 +1,12 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { FaSlackHash, FaHourglassHalf, FaWind } from 'react-icons/fa';
 import { MdOutlineTimer, MdGroups2, MdAutoDelete } from 'react-icons/md';
 import { HiOutlineLightBulb } from "react-icons/hi2";
 
 const LandingPage = () => {
+  
+  
   return (
     <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans selection:bg-indigo-100 overflow-x-hidden">
       {/* GRADIENT DEFINITION */}

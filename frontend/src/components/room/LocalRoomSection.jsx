@@ -1,52 +1,80 @@
 import { getLocalRooms, joinRoomApi } from '../../api/api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Added useCallback
 import { useNavigate } from 'react-router-dom';
 import { HiChatBubbleLeftRight } from "react-icons/hi2";
 import { IoIosArrowDropdownCircle } from "react-icons/io";
-import { MdLock, MdVerified } from 'react-icons/md'; // Added Verified for Owner icon
+import { MdLock, MdVerified, MdMyLocation } from 'react-icons/md'; // Added MdMyLocation
 import PasswordModal from '../modal/PasswordModal';
 import Toast from '../modal/Toast';
 
-const LocalRoomSection = ({ user }) => { // Receiving 'user' from Dashboard
+const LocalRoomSection = ({ user }) => {
   const [rooms, setRooms] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed to false initially
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
+  // State for coordinates
+  const [coords, setCoords] = useState({ lng: 77.07, lat: 11.04 }); // Default fallback
   const [passModal, setPassModal] = useState({ isOpen: false, roomId: null, roomName: '' });
   const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
 
-  const queryParams = { lng: 77.07, lat: 11.04, distance: 1 };
-
-  useEffect(() => {
-    const fetchRooms = async () => {
-      try {
-        setLoading(true);
-        const response = await getLocalRooms(queryParams);
-        const roomArray = response?.data?.data || response?.data || [];
-        setRooms(Array.isArray(roomArray) ? roomArray : []);
-      } catch (error) {
-        console.error("Local Room Fetch Error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRooms();
+  // 1. Logic to fetch rooms based on current coords state
+  const fetchRooms = useCallback(async (locationData) => {
+    try {
+      setLoading(true);
+      const queryParams = { 
+        lng: locationData.lng, 
+        lat: locationData.lat, 
+        distance: 10 // Increased distance slightly for better results
+      };
+      const response = await getLocalRooms(queryParams);
+      const roomArray = response?.data?.data || response?.data || [];
+      setRooms(Array.isArray(roomArray) ? roomArray : []);
+    } catch (error) {
+      console.error("Local Room Fetch Error:", error);
+      setToast({ show: true, message: "Failed to fetch nearby rooms", type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // --- THE OWNER BYPASS LOGIC ---
+  // 2. Logic to get browser location
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setToast({ show: true, message: "Geolocation not supported by browser", type: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newCoords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        setCoords(newCoords);
+        fetchRooms(newCoords); // Fetch immediately with new data
+        setToast({ show: true, message: "Location updated!", type: 'success' });
+      },
+      (error) => {
+        setLoading(false);
+        setToast({ show: true, message: "Location access denied", type: 'error' });
+      }
+    );
+  };
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchRooms(coords);
+  }, [fetchRooms]);
+
   const handleJoin = (id, isPrivate, ownerId, roomName) => {
-    // Check if the current user is the owner
     const currentUserId = user?._id || user?.id;
     const isOwner = currentUserId === ownerId;
 
-    console.log(`Checking Ownership - User: ${currentUserId}, Owner: ${ownerId}, Match: ${isOwner}`);
-
     if (isPrivate && !isOwner) {
-      // If private AND NOT the owner, show the password modal
       setPassModal({ isOpen: true, roomId: id, roomName });
     } else {
-      // If public OR the user is the owner, join immediately
       executeJoin(id, ""); 
     }
   };
@@ -82,30 +110,47 @@ const LocalRoomSection = ({ user }) => { // Receiving 'user' from Dashboard
         />
       )}
 
-      <div style={styles.header} onClick={() => setIsOpen(!isOpen)}>
-        <div style={styles.titleWrapper}>
+      <div style={styles.header}>
+        <div style={styles.titleWrapper} onClick={() => setIsOpen(!isOpen)}>
           <div style={styles.pulseDot}></div>
           <h2 style={styles.sectionTitle}>Nearby Rooms</h2>
           <span style={styles.countBadge}>{rooms.length} Active</span>
         </div>
-        <div style={{
-          ...styles.arrow,
-          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-        }}>
-          <IoIosArrowDropdownCircle size={30}/>
+        
+        <div className="flex items-center gap-4">
+          {/* LOCATION BUTTON */}
+          <button 
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent toggling the section
+              handleGetLocation();
+            }}
+            disabled={loading}
+            style={styles.locationBtn}
+            title="Update Location"
+          >
+            <MdMyLocation size={18} className={loading ? "animate-spin" : ""} />
+          </button>
+
+          <div 
+            onClick={() => setIsOpen(!isOpen)}
+            style={{
+              ...styles.arrow,
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}
+          >
+            <IoIosArrowDropdownCircle size={30}/>
+          </div>
         </div>
       </div>
 
       {isOpen && (
         <div style={styles.contentArea}>
           {loading ? (
-            <div style={styles.statusText}>Locating...</div>
+            <div style={styles.statusText}>Updating your location...</div>
           ) : rooms.length > 0 ? (
             <div style={styles.compactGrid}>
               {rooms.map((room) => {
-                // Determine owner status for UI styling
                 const isOwner = (user?._id || user?.id) === room.ownerId;
-                
                 return (
                   <div key={room._id} style={styles.smallCard}>
                     <div style={styles.cardContent}>
@@ -134,7 +179,7 @@ const LocalRoomSection = ({ user }) => { // Receiving 'user' from Dashboard
               })}
             </div>
           ) : (
-            <div style={styles.emptyText}>No rooms nearby.</div>
+            <div style={styles.emptyText}>No rooms nearby. Try updating your location.</div>
           )}
         </div>
       )}
@@ -142,11 +187,8 @@ const LocalRoomSection = ({ user }) => { // Receiving 'user' from Dashboard
   );
 };
 
-// ... (Your styles remain the same)
-
-
-
 const styles = {
+  // ... existing styles ...
   sectionContainer: {
     margin: '10px 0',
     backgroundColor: '#fff',
@@ -163,30 +205,34 @@ const styles = {
     userSelect: 'none'
   },
   titleWrapper: { display: 'flex', alignItems: 'center', gap: '10px' },
+  locationBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    padding: '6px',
+    color: '#6366f1',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    hover: { backgroundColor: '#eff6ff' }
+  },
   pulseDot: {
     width: '8px',
     height: '8px',
     backgroundColor: '#22c55e',
     borderRadius: '50%',
     boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)',
-    animation: 'pulse 2s infinite' // Note: Requires CSS keyframes in your stylesheet
+    animation: 'pulse 2s infinite'
   },
   sectionTitle: { fontSize: '0.95rem', fontWeight: '600', color: '#334155', margin: 0 },
   countBadge: { fontSize: '0.7rem', color: '#10b981', backgroundColor: '#f0fdf4', padding: '2px 8px', borderRadius: '12px' },
   arrow: { fontSize: '0.7rem', color: '#94a3b8', transition: 'transform 0.3s ease' },
-  
-  contentArea: {
-    padding: '0 16px 16px 16px',
-    borderTop: '1px solid #f8fafc'
-  },
-  compactGrid: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '10px',
-    marginTop: '12px'
-  },
+  contentArea: { padding: '0 16px 16px 16px', borderTop: '1px solid #f8fafc' },
+  compactGrid: { display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '12px' },
   smallCard: {
-    flex: '1 1 180px', // Smaller, flexible width
+    flex: '1 1 180px',
     maxWidth: '220px',
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',
@@ -206,17 +252,6 @@ const styles = {
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden' 
-  },
-  smallJoinBtn: {
-    backgroundColor: '#4f46e5',
-    color: '#fff',
-    border: 'none',
-    padding: '5px 0',
-    borderRadius: '5px',
-    fontSize: '0.75rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    width: '100%'
   },
   statusText: { fontSize: '0.75rem', color: '#94a3b8', padding: '10px 0' },
   emptyText: { fontSize: '0.75rem', color: '#94a3b8', padding: '10px 0', textAlign: 'center' },

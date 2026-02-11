@@ -5,6 +5,7 @@ import { HiChatBubbleLeftRight } from "react-icons/hi2";
 import { FaSlackHash } from "react-icons/fa";
 import { BsGlobeCentralSouthAsia } from "react-icons/bs";
 import { Link, useNavigate } from 'react-router-dom';
+import Logout from '../blocks/Logout';
 
 import EmptyState from './EmptyState';
 import ConfirmModal from '../modal/ConfirmModal';
@@ -146,13 +147,25 @@ const Dashboard = () => {
       {/* HEADER */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-40 mb-6 md:mb-10">
         <div className="max-w-6xl mx-auto px-4 h-20 flex justify-between items-center">
-          <div className="flex flex-col">
-            <h1 className="flex items-center gap-2 text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
-              <FaSlackHash style={{ fill: "url(#hash-gradient)" }} size={36} />
-              Hashtag
-            </h1>
-            <p className="hidden md:block text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-1">Connect Locally</p>
-          </div>
+          <div className="w-full flex items-center justify-between md:justify-start md:gap-8 lg:gap-12 px-2 py-4">
+  {/* Left Section: Logo and Slogan */}
+  <div className="flex flex-col md:flex-row md:items-center gap-1">
+    <h1 className="flex items-center gap-2 text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
+      <FaSlackHash style={{ fill: "url(#hash-gradient)" }} size={36} className="shrink-0" />
+      <span className="leading-none">Hashtag</span>
+    </h1>
+    
+    {/* Slogan: Hidden on tiny screens, shows below logo on small, and beside logo on desktop */}
+    <p className="hidden sm:block md:mt-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest md:ml-2">
+      Connect Locally
+    </p>
+  </div>
+
+  {/* Right Section: Logout Button */}
+  <div className="md:ml-auto">
+    <Logout />
+  </div>
+</div>
 
           <Link to="/room/create">
             <button className="hidden md:flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-100">
