@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { MdOutlineVisibility, MdOutlineVisibilityOff, MdAlternateEmail, MdLockOutline, MdPersonOutline } from "react-icons/md";
 import { signupapi } from "../../api/api";
-import { useNavigate } from "react-router-dom";
-import { FaSlackHash } from "react-icons/fa";
+import { useNavigate, Link } from "react-router-dom";
+// Import your logo properly
+import Logo from "../../assets/hash-tag-logo.png";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -44,26 +45,28 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] flex items-center justify-center p-4 selection:bg-indigo-100 overflow-x-hidden font-sans relative">
+    <div className="min-h-screen w-full bg-[#f8fafc] flex flex-col items-center justify-center p-4 selection:bg-indigo-100 overflow-x-hidden font-sans relative">
       
-      {/* Background Accents */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-100/40 blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-50/50 blur-[100px] pointer-events-none"></div>
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-100/40 blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-80 h-80 bg-pink-50/50 blur-[120px] pointer-events-none"></div>
 
-      <svg width="0" height="0" className="absolute">
-        <linearGradient id="hash-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop stopColor="#4f46e5" offset="0%" />
-          <stop stopColor="#ec4899" offset="100%" />
-        </linearGradient>
-      </svg>
+      {/* BRAND LOGO SECTION */}
+      <div className="mb-6 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="relative group">
+          <div className="absolute inset-0 bg-indigo-400/20 blur-2xl rounded-full scale-150 group-hover:bg-indigo-400/40 transition-all duration-500"></div>
+          <img 
+            src={Logo} 
+            alt="Hash-Tag Logo" 
+            className="w-20 h-20 md:w-24 md:h-24 object-contain relative z-10 drop-shadow-2xl hover:scale-105 transition-transform duration-300 ease-out animate-bounce-slow"
+          />
+        </div>
+      </div>
 
       <div className="w-full max-w-[400px] bg-white rounded-[2.5rem] p-7 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-slate-100 relative z-10">
         
         {/* Header */}
         <div className="flex flex-col items-center mb-6 md:mb-8">
-          <div className="p-3 bg-slate-50 rounded-2xl mb-3 border border-slate-100 shadow-sm">
-            <FaSlackHash style={{ fill: "url(#hash-gradient)" }} size={28} />
-          </div>
           <h2 className="text-slate-800 text-2xl md:text-3xl font-black tracking-tight text-center leading-tight">Create Account</h2>
           <p className="text-slate-400 text-xs md:text-sm font-semibold mt-1">Start your #story today</p>
         </div>
@@ -135,19 +138,25 @@ const Signup = () => {
           </button>
         </form>
 
-        {/* Footer Link */}
         <p className="text-center text-slate-500 text-xs mt-8">
           Already have an account?{" "}
-          <a href="/login" className="text-indigo-600 hover:text-pink-500 font-bold underline underline-offset-8 decoration-indigo-600/20 transition-all">
+          <Link to="/login" className="text-indigo-600 hover:text-pink-500 font-bold underline underline-offset-8 decoration-indigo-600/20 transition-all">
             Login
-          </a>
+          </Link>
         </p>
       </div>
       
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style>{`
         body { background-color: #f8fafc; }
         ::-webkit-scrollbar { width: 0px; }
-      `}} />
+        @keyframes bounce-slow {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        .animate-bounce-slow {
+          animation: bounce-slow 4s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

@@ -6,7 +6,7 @@ import { FaSlackHash } from "react-icons/fa";
 import { BsGlobeCentralSouthAsia } from "react-icons/bs";
 import { Link, useNavigate } from 'react-router-dom';
 import Logout from '../blocks/Logout';
-
+import Logo from "../../assets/hash-tag-logo.png";
 import EmptyState from './EmptyState';
 import ConfirmModal from '../modal/ConfirmModal';
 import EditModal from '../modal/EditModal';
@@ -111,7 +111,23 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-24 md:pb-10 relative touch-manipulation">
+    <div className="min-h-screen bg-[#f8fafc] pb-24 md:pb-10 relative touch-manipulation overflow-hidden">
+      
+      {/* RESPONSIVE SCATTERED BACKGROUND WATERMARKS */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.05] md:opacity-[0.09] z-0 overflow-hidden">
+        {/* Mobile Essentials */}
+        <FaSlackHash className="absolute top-[10%] left-[5%] rotate-12" size={60} />
+        <FaSlackHash className="absolute bottom-[15%] right-[10%] rotate-12" size={80} />
+        
+        {/* Desktop Only Marks to avoid Mobile Clutter */}
+        <FaSlackHash className="hidden md:block absolute top-[25%] left-[40%] -rotate-45" size={60} />
+        <FaSlackHash className="hidden md:block absolute top-[40%] right-[10%] -rotate-12" size={120} />
+        <FaSlackHash className="hidden md:block absolute top-[60%] left-[25%] rotate-12" size={70} />
+        <FaSlackHash className="hidden md:block absolute bottom-[20%] left-[15%] rotate-45" size={100} />
+        <FaSlackHash className="hidden md:block absolute bottom-[35%] right-[25%] -rotate-12" size={85} />
+        <FaSlackHash className="hidden md:block absolute top-[5%] right-[30%] rotate-90" size={50} />
+      </div>
+
       <svg width="0" height="0" className="absolute">
         <linearGradient id="hash-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop stopColor="#4f46e5" offset="0%" />
@@ -130,7 +146,11 @@ const Dashboard = () => {
           <div className="w-full flex items-center justify-between">
             <div className="flex flex-col md:flex-row md:items-center gap-1">
               <h1 className="flex items-center gap-2 text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
-                <FaSlackHash style={{ fill: "url(#hash-gradient)" }} size={36} className="shrink-0" />
+                <img 
+                  src={Logo} 
+                  alt="Hash-Tag Logo" 
+                  className="w-16 h-16 md:w-24 md:h-24 object-contain relative z-10 drop-shadow-2xl hover:scale-105 transition-transform duration-300 ease-out animate-bounce-slow"
+                />
                 <span className="leading-none">Hashtag</span>
               </h1>
               <p className="hidden sm:block md:mt-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest md:ml-2">
@@ -142,13 +162,17 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 space-y-12">
+      <main className="max-w-6xl mx-auto px-4 space-y-12 relative z-10">
         {user && (
-          <div className="px-2 pt-4">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
-              Hey, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-pink-500 to-amber-500">{user.name || user.username}</span>!
-            </h2>
-            <p className="text-slate-500 font-medium mt-1">Discover what's happening in your surroundings today.</p>
+          <div className="px-2 pt-4 relative">
+           
+            
+            <div className="relative z-10">
+              <h2 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">
+                Hey, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-pink-500 to-amber-500">{user.name || user.username}</span>!
+              </h2>
+              <p className="text-slate-500 font-medium mt-1">Discover what's happening in your surroundings today.</p>
+            </div>
           </div>
         )}
 
@@ -177,14 +201,12 @@ const Dashboard = () => {
                       ${isOwner ? 'border-indigo-200 bg-gradient-to-br from-indigo-50/30 to-transparent' : 'border-slate-200'}
                       hover:border-indigo-400 hover:shadow-2xl hover:shadow-indigo-100/40 active:scale-[0.98]`}
                   >
-                    {/* OWNER BACKGROUND SYMBOL WATERMARK */}
                     {isOwner && (
                       <div className="absolute -bottom-6 -right-6 text-indigo-600 opacity-[0.09] transition-transform duration-700 group-hover:scale-150 group-hover:-rotate-12 pointer-events-none">
                          <FaSlackHash size={200} />
                       </div>
                     )}
 
-                    {/* Owner Badge */}
                     {isOwner && (
                       <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-tighter px-4 py-1 rounded-bl-2xl z-10 shadow-sm">
                         hosted
@@ -235,7 +257,6 @@ const Dashboard = () => {
                         </div>
                       </div>
                       
-                      {/* GRADIENT BUTTON DEFAULT */}
                       <button
                         onClick={() => handleJoin(room._id, room.isprivate, room.ownerId, room.name)}
                         className="flex items-center gap-2 px-7 py-3.5 rounded-[1.5rem] text-sm font-black text-white transition-all duration-300
@@ -270,4 +291,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default Dashboard; 
