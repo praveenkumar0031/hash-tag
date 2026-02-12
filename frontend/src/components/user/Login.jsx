@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MdOutlineVisibility, MdOutlineVisibilityOff, MdAlternateEmail, MdLockOutline } from "react-icons/md";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom"; // Added Link
 import { loginapi, verifyGoogleCode } from "../../api/api";
 import { FcGoogle } from "react-icons/fc"; 
 import { FaSlackHash } from "react-icons/fa";
@@ -81,7 +81,6 @@ const Login = () => {
   return (
     <div className="min-h-screen w-full bg-[#f8fafc] flex items-center justify-center p-4 selection:bg-indigo-100 overflow-x-hidden font-sans">
       
-      {/* Soft Light Mode Accents */}
       <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-100/40 blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-pink-50/50 blur-[120px] pointer-events-none"></div>
 
@@ -92,10 +91,8 @@ const Login = () => {
         </linearGradient>
       </svg>
 
-      {/* Login Card - Clean White Version */}
       <div className="w-full max-w-[400px] bg-white rounded-[2.5rem] p-7 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-slate-100 relative z-10">
         
-        {/* Header - Compact for Mobile Visibility */}
         <div className="flex flex-col items-center mb-6 md:mb-8">
           <div className="p-3 bg-slate-50 rounded-2xl mb-3 border border-slate-100 shadow-sm">
              <FaSlackHash style={{ fill: "url(#hash-gradient)" }} size={28} />
@@ -112,7 +109,6 @@ const Login = () => {
           </div>
         )}
 
-        {/* Inputs - Light Mode Styling */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative group">
             <MdAlternateEmail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
@@ -147,6 +143,16 @@ const Login = () => {
             </button>
           </div>
 
+          {/* FORGOT PASSWORD LINK */}
+          <div className="flex justify-end px-1">
+            <Link 
+              to="/forget" 
+              className="text-[11px] font-black uppercase tracking-wider text-slate-400 hover:text-indigo-600 transition-colors"
+            >
+              Forgot Password?
+            </Link>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -162,7 +168,6 @@ const Login = () => {
           <div className="flex-1 h-px bg-slate-100"></div>
         </div>
 
-        {/* Google Button - Light Mode */}
         <button
           type="button"
           onClick={() => googlelogin()}
@@ -173,7 +178,6 @@ const Login = () => {
           <span>Continue with Google</span>
         </button>
 
-        {/* Footer Link - Highly Visible */}
         <p className="text-center text-slate-500 text-xs mt-8">
           Don't have an account?{" "}
           <a href="/signup" className="text-indigo-600 hover:text-pink-500 font-bold underline underline-offset-8 decoration-indigo-600/20 transition-all">

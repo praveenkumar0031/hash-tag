@@ -18,7 +18,9 @@ const userSchema=mongoose.Schema({
             index: '2dsphere' // Essential for proximity searches
         },
         formattedAddress: String
-    }
+    },
+    resetOtp: String,
+resetOtpExpires: Date
 });
 userSchema.index({ location: "2dsphere" });
 module.exports=mongoose.model("user",userSchema);

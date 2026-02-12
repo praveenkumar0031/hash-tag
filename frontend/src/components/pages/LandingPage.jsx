@@ -1,134 +1,155 @@
-import React, { useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { FaSlackHash, FaHourglassHalf, FaWind } from 'react-icons/fa';
-import { MdOutlineTimer, MdGroups2, MdAutoDelete } from 'react-icons/md';
-import { HiOutlineLightBulb } from "react-icons/hi2";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { FaSlackHash, FaMapMarkerAlt, FaShieldAlt, FaWind } from 'react-icons/fa';
+import { MdOutlineTimer, MdCoffee, MdOutlineCleaningServices, MdNearMe, MdGroups } from 'react-icons/md';
+import { HiOutlineLightningBolt } from "react-icons/hi";
 
 const LandingPage = () => {
-  
-  
   return (
     <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans selection:bg-indigo-100 overflow-x-hidden">
-      {/* GRADIENT DEFINITION */}
+      {/* GRADIENT DEFINITION FOR ICON */}
       <svg width="0" height="0" className="absolute">
         <linearGradient id="hash-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop stopColor="#4f46e5" offset="0%" />
-          <stop stopColor="#ec4899" offset="50%" />
-          <stop stopColor="#f59e0b" offset="100%" />
+          <stop stopColor="#6366f1" offset="0%" />
+          <stop stopColor="#a855f7" offset="50%" />
+          <stop stopColor="#ec4899" offset="100%" />
         </linearGradient>
       </svg>
 
-      {/* NAV */}
-      <nav className="flex justify-between items-center px-5 py-6 md:py-8 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <FaSlackHash style={{ fill: "url(#hash-gradient)" }} size={28} className="md:size-8" />
-          <span className="text-xl md:text-2xl font-black tracking-tighter uppercase italic">Hash-Tag</span>
+      {/* NAVIGATION */}
+      <nav className="flex justify-between items-center px-6 py-6 md:px-12 lg:px-20 max-w-[1920px] mx-auto">
+        <div className="flex items-center gap-2 group cursor-pointer">
+          <FaSlackHash style={{ fill: "url(#hash-gradient)" }} size={32} className="transition-transform group-hover:rotate-12 duration-300" />
+          <span className="text-2xl font-black tracking-tighter uppercase italic bg-clip-text text-transparent bg-slate-900">
+            Hash-Tag
+          </span>
         </div>
         <Link to="/login">
-          <button className="bg-white border-2 border-slate-900 text-slate-900 px-4 py-1.5 md:px-6 md:py-2 rounded-xl font-bold text-sm md:text-base hover:bg-slate-900 hover:text-white transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+          <button className="bg-white border-2 border-slate-900 text-slate-900 px-5 py-2 rounded-xl font-bold text-sm md:text-base hover:bg-slate-900 hover:text-white transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
             Login
           </button>
         </Link>
       </nav>
 
       {/* HERO SECTION */}
-      <section className="px-5 pt-8 pb-16 md:pt-12 md:pb-20 max-w-7xl mx-auto text-center relative">
-        <div className="inline-flex items-center gap-2 bg-white border border-slate-200 text-slate-500 px-3 py-1 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] mb-6 md:mb-8 shadow-sm">
-          <FaHourglassHalf className="animate-pulse" /> Time is Ticking
+      <section className="px-6 pt-12 pb-20 md:pt-20 md:pb-32 max-w-7xl mx-auto text-center">
+        <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 text-indigo-600 px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest mb-8 animate-pulse">
+          <MdNearMe /> 12 Active Rooms Nearby
         </div>
         
-        <h1 className="text-4xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-6 md:mb-8 leading-[1.1] md:leading-[0.9]">
-          OWN THE <br /> 
-          <span className="italic" style={{ background: 'linear-gradient(to right, #4f46e5, #ec4899, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            MOMENT.
+        <h1 className="text-5xl md:text-8xl lg:text-9xl font-black tracking-tighter mb-8 leading-[0.95] md:leading-[0.85]">
+          SPILL THE TEA, <br /> 
+          <span className="italic" style={{ background: 'linear-gradient(to right, #6366f1, #a855f7, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            THEN LEAVE.
           </span>
         </h1>
 
-        <p className="text-slate-500 text-base md:text-xl max-w-2xl mx-auto mb-8 md:mb-10 font-medium leading-relaxed">
-          The chat app for people who value their time. Join topic-specific pop-up lounges that vanish when your break ends.
+        <p className="text-slate-500 text-lg md:text-2xl max-w-3xl mx-auto mb-12 font-medium leading-relaxed px-4">
+          The "Break-Time" chat app for people who value privacy. Join local pop-up lounges that vanish automatically in 24 hours.
         </p>
 
-        <div className="flex justify-center items-center">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 px-6">
           <Link to="/signup" className="w-full sm:w-auto">
-            <button className="w-full sm:w-auto bg-indigo-600 text-white px-8 py-4 md:px-12 md:py-5 rounded-2xl font-bold text-lg md:text-xl hover:shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:-translate-y-1 transition-all active:scale-95">
-              Start Chatting
+            <button className="w-full sm:w-80 bg-slate-900 text-white px-8 py-5 rounded-2xl font-bold text-xl hover:bg-indigo-600 transition-all active:scale-95 shadow-2xl">
+              Start Your Tea Talk
             </button>
           </Link>
         </div>
       </section>
 
-      {/* THE CORE CONCEPT (Bento Grid) */}
-      <section className="py-12 md:py-20 px-5 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+      {/* BENTO GRID FEATURES */}
+      <section className="py-12 md:py-24 px-6 max-w-[1440px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           
-          {/* Feature 1: Time Bound */}
-          <div className="md:col-span-8 bg-indigo-600 rounded-[2rem] md:rounded-[3rem] p-8 md:p-10 text-white flex flex-col justify-between min-h-[300px] md:min-h-[350px] relative overflow-hidden group">
-            <MdOutlineTimer className="absolute -right-10 -bottom-10 text-[12rem] md:text-[15rem] opacity-10 group-hover:rotate-12 transition-transform duration-700" />
+          {/* Feature 1: The 24h Wipe */}
+          <div className="md:col-span-7 lg:col-span-8 bg-indigo-600 rounded-[2.5rem] p-8 md:p-12 text-white flex flex-col justify-between min-h-[380px] relative overflow-hidden group">
+            <MdOutlineCleaningServices className="absolute -right-12 -bottom-12 text-[15rem] opacity-10 group-hover:-rotate-12 transition-transform duration-1000" />
             <div className="relative z-10">
-              <h3 className="text-3xl md:text-4xl font-bold mb-4">Limited Lifespan</h3>
-              <p className="text-indigo-100 text-base md:text-lg max-w-md leading-relaxed">Rooms aren't permanent. They vanish after the timer hits zero, leaving no digital footprint behind.</p>
+              <div className="bg-white/20 w-fit p-4 rounded-2xl mb-8">
+                <MdOutlineTimer size={32} />
+              </div>
+              <h3 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">Vanish Mode</h3>
+              <p className="text-indigo-100 text-lg md:text-xl max-w-md leading-relaxed">
+                No digital footprints. Every chat, image, and room is wiped from the server every 24 hours. Pure spontaneity.
+              </p>
             </div>
-            <div className="flex items-center gap-2 font-bold text-[10px] md:text-sm uppercase tracking-widest relative z-10">
-              <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span> Pop-up Active
+            <div className="flex items-center gap-2 font-bold text-xs uppercase tracking-[0.2em] relative z-10">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-ping"></span> Servers clear daily
             </div>
           </div>
 
-          {/* Feature 2: Clean Slate */}
-          <div className="md:col-span-4 bg-white border border-slate-200 rounded-[2rem] md:rounded-[3rem] p-8 md:p-10 flex flex-col justify-between min-h-[200px] hover:border-indigo-200 transition-colors">
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-xl md:rounded-2xl flex items-center justify-center text-slate-800">
-              <FaWind size={24} />
+          {/* Feature 2: Location Based */}
+          <div className="md:col-span-5 lg:col-span-4 bg-white border-2 border-slate-100 rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-between min-h-[300px] hover:shadow-xl transition-all">
+            <div className="w-16 h-16 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-500">
+              <FaMapMarkerAlt size={28} />
             </div>
             <div>
-              <h3 className="text-xl md:text-2xl font-bold mb-2">Zero Clutter</h3>
-              <p className="text-slate-500 text-sm md:text-base">When the room dies, your chat list stays clean. No ghost notifications.</p>
+              <h3 className="text-2xl md:text-3xl font-bold mb-3">Local Lounges</h3>
+              <p className="text-slate-500 text-base md:text-lg">
+                Find rooms hosted by people right next to you. Perfect for campus gossip, office breaks, or event hangouts.
+              </p>
             </div>
           </div>
 
-          {/* Feature 3: Spontaneous Thought */}
-          <div className="md:col-span-4 bg-slate-900 rounded-[2rem] md:rounded-[3rem] p-8 md:p-10 text-white flex flex-col justify-between min-h-[200px] md:min-h-[300px]">
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-800 rounded-xl md:rounded-2xl flex items-center justify-center text-amber-400">
-              <HiOutlineLightBulb size={24} />
+          {/* Feature 3: Data Security */}
+          <div className="md:col-span-5 lg:col-span-4 bg-slate-900 rounded-[2.5rem] p-8 md:p-10 text-white flex flex-col justify-between min-h-[300px]">
+            <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-indigo-400">
+              <FaShieldAlt size={28} />
             </div>
             <div>
-              <h3 className="text-xl md:text-2xl font-bold mb-2">Spontaneous</h3>
-              <p className="text-slate-400 text-sm md:text-base">From tech trends to random shower thoughts. Share it before it's gone.</p>
+              <h3 className="text-2xl md:text-3xl font-bold mb-3">Safe & Secure</h3>
+              <p className="text-slate-400 text-base md:text-lg">
+                Your data is encrypted and temporary. We don't sell your info because we don't keep it long enough to.
+              </p>
             </div>
           </div>
 
-          {/* Feature 4: High Engagement */}
-          <div className="md:col-span-8 bg-[#fdf2f8] border border-pink-100 rounded-[2rem] md:rounded-[3rem] p-8 md:p-10 flex flex-col justify-center items-start">
-            <div className="flex gap-3 md:gap-4 mb-6">
-               <div className="p-3 md:p-4 bg-pink-100 text-pink-600 rounded-full"><MdGroups2 size={24} className="md:size-8" /></div>
-               <div className="p-3 md:p-4 bg-indigo-100 text-indigo-600 rounded-full"><MdAutoDelete size={24} className="md:size-8" /></div>
+          {/* Feature 4: The Tea Talk Concept */}
+          <div className="md:col-span-7 lg:col-span-8 bg-amber-50 border-2 border-amber-100 rounded-[2.5rem] p-8 md:p-12 flex flex-col justify-center relative overflow-hidden">
+            <div className="flex gap-4 mb-8">
+               <div className="p-4 bg-amber-200 text-amber-700 rounded-2xl shadow-sm"><MdCoffee size={32} /></div>
+               <div className="p-4 bg-indigo-200 text-indigo-700 rounded-2xl shadow-sm"><MdGroups size={32} /></div>
             </div>
-            <h3 className="text-2xl md:text-4xl font-black text-slate-800 mb-3 md:mb-4 tracking-tight">Focus on the Now.</h3>
-            <p className="text-slate-600 text-sm md:text-lg leading-relaxed">Temporary spaces make conversations more valuable. You engage more because you know it won't be here tomorrow.</p>
+            <h3 className="text-3xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">Split Your Tea.</h3>
+            <p className="text-slate-600 text-lg md:text-xl leading-relaxed max-w-2xl">
+              Break time is sacred. Hash-Tag lets you create instant, localized spaces to vent, laugh, or debate with colleagues and peers without the baggage of permanent history.
+            </p>
+            <FaWind className="absolute right-[-20px] top-1/2 -translate-y-1/2 text-amber-200/30 text-[10rem] pointer-events-none" />
           </div>
-
         </div>
       </section>
 
       {/* CALL TO ACTION */}
-      <section className="py-12 md:py-24 px-5">
-        <div className="max-w-5xl mx-auto bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-[2.5rem] md:rounded-[4rem] p-10 md:p-24 text-center text-white relative shadow-2xl overflow-hidden">
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 rounded-[3rem] md:rounded-[4rem] p-10 md:p-24 text-center text-white relative shadow-2xl overflow-hidden">
           <div className="relative z-10">
-            <h2 className="text-3xl md:text-6xl font-black mb-6 md:mb-8">Ready for your break?</h2>
-            <p className="text-indigo-100 mb-8 md:mb-10 text-base md:text-xl font-medium">Join a lounge and let the conversation begin.</p>
+            <h2 className="text-4xl md:text-7xl font-black mb-8 leading-tight">Ready for a <br className="md:hidden" /> break?</h2>
+            <p className="text-indigo-50 mb-12 text-lg md:text-2xl font-medium max-w-2xl mx-auto opacity-90">
+              Join or create a lounge in seconds. No profile setup, no long-term commitment.
+            </p>
             <Link to="/signup">
-              <button className="bg-white text-indigo-600 px-8 py-4 md:px-12 md:py-5 rounded-2xl font-black text-base md:text-xl hover:bg-slate-50 transition-all shadow-xl active:scale-95">
+              <button className="bg-white text-indigo-600 px-10 py-5 rounded-2xl font-black text-lg md:text-xl hover:scale-105 hover:shadow-2xl transition-all active:scale-95">
                 JOIN NOW
               </button>
             </Link>
           </div>
-          {/* Decorative Circle for Mobile Background */}
-          <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+          {/* Decorative Elements */}
+          <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
+            <div className="absolute -top-24 -left-24 w-96 h-96 bg-white rounded-full blur-[120px]"></div>
+            <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-900 rounded-full blur-[120px]"></div>
+          </div>
         </div>
       </section>
 
       {/* FOOTER */}
-      <footer className="py-10 text-center text-slate-400 font-bold text-[9px] md:text-xs uppercase tracking-[0.2em] px-5 leading-loose">
-        Hash-Tag // The Pop-Up Social Experience.
-        //Developer by Praveen Kumar S
+      <footer className="py-12 border-t border-slate-100 text-center px-6">
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4 text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em]">
+          <span>Hash-Tag</span>
+          <span className="hidden md:inline">•</span>
+          <span>The Pop-Up Social Experience</span>
+          <span className="hidden md:inline">•</span>
+          <span className="text-slate-900">Developed by Praveen Kumar S</span>
+        </div>
       </footer>
     </div>
   );
