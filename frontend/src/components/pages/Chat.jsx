@@ -1,10 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { socket } from '../../socket';
-import { getMessagesApi, addMessageApi, getRoomByIdApi, leaveRoomApi } from '../../api/api';
+import { getMessagesApi, addMessageApi, getRoomByIdApi } from '../../api/api';
 import { useAuth } from '../../context/AuthContext';
-import { MdSend, MdArrowBack, MdTag, MdInfoOutline } from 'react-icons/md';
-import { HiChatBubbleLeftRight } from "react-icons/hi2";
+import { 
+  MdSend, MdArrowBack, MdTag, MdInfoOutline, 
+  MdPeopleAlt, MdOutlineKeyboardArrowDown, MdPalette, MdClose 
+} from 'react-icons/md';
+
+// Global Themes for the App UI
+const THEMES = {
+  indigo: { name: 'Indigo', primary: 'bg-indigo-600', text: 'text-indigo-600', border: 'focus:border-indigo-100', shadow: 'shadow-indigo-100' },
+  emerald: { name: 'Emerald', primary: 'bg-emerald-600', text: 'text-emerald-600', border: 'focus:border-emerald-100', shadow: 'shadow-emerald-100' },
+  rose: { name: 'Rose', primary: 'bg-rose-600', text: 'text-rose-600', border: 'focus:border-rose-100', shadow: 'shadow-rose-100' },
+  amber: { name: 'Amber', primary: 'bg-amber-600', text: 'text-amber-600', border: 'focus:border-amber-100', shadow: 'shadow-amber-100' },
+};
+
+// Colors for other users' messages
+const USER_COLORS = [
+  'bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-teal-500', 
+  'bg-orange-500', 'bg-cyan-600', 'bg-fuchsia-500'
+];
+
 const Chat = () => {
   const { currentUserId, loading: authLoading } = useAuth();
   const { roomId } = useParams();
@@ -14,189 +31,195 @@ const Chat = () => {
   const [roomInfo, setRoomInfo] = useState(null);
   const [text, setText] = useState('');
   const [fetching, setFetching] = useState(true);
+  const [showInfo, setShowInfo] = useState(false); // Hidden by default for mobile
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [activeTheme, setActiveTheme] = useState(() => localStorage.getItem('chat-theme') || 'indigo');
+
   const scrollRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const currentTheme = THEMES[activeTheme];
+
+  // Logic to assign a consistent color to a userId
+  const getUserColor = (id) => {
+    if (!id) return USER_COLORS[0];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
+  };
+
+  useEffect(() => {
+    localStorage.setItem('chat-theme', activeTheme);
+  }, [activeTheme]);
 
   useEffect(() => {
     if (authLoading || !roomId) return;
-
     let isMounted = true;
-
     const initChat = async () => {
       try {
-        const [msgData, roomData] = await Promise.all([
-          getMessagesApi(roomId),
-          getRoomByIdApi(roomId)
-        ]);
+        const [msgData, roomData] = await Promise.all([getMessagesApi(roomId), getRoomByIdApi(roomId)]);
         if (isMounted) {
           setMessages(msgData);
           setRoomInfo(roomData);
           setFetching(false);
-
-          //console.log("1. Emitting join_room for:", roomId);
           socket.emit("join_room", roomId);
         }
-      } catch (err) {
-        console.error("Init Error:", err);
-        setFetching(false);
-      }
+      } catch (err) { setFetching(false); }
     };
-
     initChat();
-
-
-    const handleNewMessage = (incomingMsg) => {
-      //console.log("2. RECEIVED MESSAGE VIA SOCKET:", incomingMsg);
-
-      setMessages((prev) => {
-
-        if (prev.find(m => m._id === incomingMsg._id)) return prev;
-        const newArray = [...prev, incomingMsg];
-        console.log("3. UI STATE UPDATING. New count:", newArray.length);
-        return newArray;
-      });
-    };
-
+    const handleNewMessage = (msg) => setMessages(prev => prev.find(m => m._id === msg._id) ? prev : [...prev, msg]);
     socket.on("new-message", handleNewMessage);
-
-
-    socket.on("connect", () => {
-      //console.log("Socket reconnected. Re-joining room:", roomId);
-      socket.emit("join_room", roomId);
-    });
-
-    return () => {
-      isMounted = false;
-      socket.off("new-message", handleNewMessage);
-      socket.off("connect");
-    };
+    return () => { isMounted = false; socket.off("new-message", handleNewMessage); };
   }, [roomId, authLoading]);
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (isAtBottom) scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isAtBottom]);
 
   const handleSend = async (e) => {
     e.preventDefault();
     if (!text.trim()) return;
-
+    const content = text;
+    setText('');
     try {
-      const messageContent = text;
-      setText('');
-
-      const savedMsg = await addMessageApi(roomId, messageContent);
-      //console.log("4. MESSAGE SAVED TO DB:", savedMsg);
-
-
+      const savedMsg = await addMessageApi(roomId, content);
       socket.emit("send_message", { ...savedMsg, roomId });
-      //console.log("5. EMITTED send_message to server");
-
-    } catch (err) {
-      console.error("Send failed:", err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  const handleBack = async () => {
-    await leaveRoomApi(roomId);
-    navigate('/dashboard');
-  };
-  const getSenderColor = (id) => {
-  const colors = [
-    'text-blue-600', 'text-emerald-600', 'text-orange-600', 
-    'text-pink-600', 'text-purple-600', 'text-amber-600', 'text-cyan-600'
-  ];
-  // Simple hash to pick a color based on ID
-  const index = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[index % colors.length];
-};
+  if (authLoading || fetching) return (
+    <div className="flex h-screen w-full items-center justify-center bg-white">
+      <div className={`animate-spin w-8 h-8 border-4 border-t-transparent ${currentTheme.text} rounded-full`} />
+    </div>
+  );
 
-  if (authLoading || fetching) return <div className="flex h-screen items-center justify-center">Loading...</div>;
-return (
-  <div className="flex flex-col h-screen bg-[#f8fafc] w-full overflow-hidden font-sans">
-    {/* HEADER: Glassmorphism effect */}
-    <header className="flex items-center gap-4 px-6 py-4 bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-10">
-      <button 
-        onClick={handleBack} 
-        className="p-2 hover:bg-slate-100 rounded-full transition-colors active:scale-90"
-      >
-        <MdArrowBack size={24} className="text-slate-600" />
-      </button>
-      <div className="flex-1">
-        <h1 className="font-bold text-slate-800 flex items-center gap-2 text-lg">
-          <div className="bg-indigo-100 p-1.5 rounded-lg">
-            <MdTag className="text-indigo-600" />
+  return (
+    <div className="flex h-screen bg-[#F8FAFC] w-full overflow-hidden font-sans text-slate-900">
+      
+      {/* MAIN CHAT AREA */}
+      <div className="flex flex-col flex-1 h-full min-w-0 bg-white md:my-4 md:ml-4 md:rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden relative">
+        
+        {/* HEADER */}
+        <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-slate-50 bg-white/80 backdrop-blur-md z-20">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-slate-100 rounded-xl transition-all md:hidden text-slate-500">
+              <MdArrowBack size={22} />
+            </button>
+            <div className={`w-10 h-10 rounded-2xl ${currentTheme.primary} flex items-center justify-center text-white shadow-lg ${currentTheme.shadow}`}>
+              <MdTag size={20} />
+            </div>
+            <h1 className="font-bold text-base md:text-lg truncate max-w-[150px]">{roomInfo?.name || "Lobby"}</h1>
           </div>
-          {roomInfo?.name || "Chat Room"}
-        </h1>
-        <p className="text-[11px] text-emerald-500 font-medium flex items-center gap-1 ml-9">
-          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Online
-        </p>
-      </div>
-    </header>
 
-    {/* MESSAGES AREA: Soft scroll and spacing */}
-    <main className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 scroll-smooth">
-      {messages.map((msg, index) => {
-        const senderId = msg.senderId?._id || msg.senderId;
-        const senderName = msg.senderId?.username || "Guest";
-        const isMine = senderId === currentUserId;
-
-        return (
-          <div 
-            key={msg._id || index} 
-            className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+          <button 
+            onClick={() => setShowInfo(true)}
+            className="p-2.5 rounded-2xl text-slate-400 hover:bg-slate-50 transition-all"
           >
-            {/* Sender Name (Only show for others) */}
-            {!isMine && (
-              <span className="text-[11px] font-semibold text-slate-500 ml-2 mb-1 uppercase tracking-wider">
-                {senderName}
-              </span>
-            )}
+            <MdInfoOutline size={24} />
+          </button>
+        </header>
 
-            {/* Message Bubble */}
-            <div className={`max-w-[85%] md:max-w-[70%] px-4 py-3 rounded-2xl shadow-sm transition-all hover:shadow-md ${
-              isMine
-                ? 'bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-br-none'
-                : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none'
-            }`}>
-              <p className="text-[15px] leading-relaxed break-words">
-                {msg.content}
-              </p>
+        {/* MESSAGES LIST */}
+        <main 
+          ref={chatContainerRef} 
+          onScroll={() => {
+            const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+            setIsAtBottom(scrollHeight - scrollTop <= clientHeight + 100);
+          }}
+          className="flex-1 overflow-y-auto p-4 md:p-8 space-y-1 bg-[#FCFDFF]"
+        >
+          {messages.map((msg, idx) => {
+            const senderId = msg.senderId?._id || msg.senderId;
+            const isMine = senderId === currentUserId;
+            const isFirst = idx === 0 || (messages[idx-1].senderId?._id || messages[idx-1].senderId) !== senderId;
+            
+            // Theme Logic: Mine = Chosen Global Theme | Others = Random Persistent Color
+            const bubbleColor = isMine ? currentTheme.primary : getUserColor(senderId);
 
-              {/* Timestamp */}
-              <div className={`text-[10px] mt-1.5 flex items-center gap-1 opacity-70 ${isMine ? 'justify-end text-indigo-100' : 'justify-start text-slate-400'}`}>
-                <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                {isMine && <span className="ml-1">✓</span>}
+            return (
+              <div key={msg._id || idx} className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${isFirst ? 'mt-6' : 'mt-1'}`}>
+                <div className={`max-w-[85%] md:max-w-[70%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                  {isFirst && !isMine && (
+                    <span className="text-[10px] font-black text-slate-400 ml-3 mb-1 uppercase tracking-tighter">
+                      {msg.senderId?.username || "Guest User"}
+                    </span>
+                  )}
+                  <div className={`px-4 py-2.5 transition-all text-white shadow-sm ${bubbleColor} ${
+                    isFirst ? (isMine ? 'rounded-2xl rounded-tr-none' : 'rounded-2xl rounded-tl-none') : 'rounded-2xl'
+                  }`}>
+                    <p className="text-[14px] md:text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={scrollRef} />
+        </main>
+
+        {/* INPUT */}
+        <footer className="p-4 md:p-6 bg-white border-t border-slate-50">
+          <form onSubmit={handleSend} className="flex items-center gap-2 max-w-5xl mx-auto">
+            <input
+              type="text"
+              placeholder="Write something..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className={`flex-1 bg-slate-50 border-2 border-transparent ${currentTheme.border} focus:bg-white rounded-2xl px-5 py-3 transition-all outline-none`}
+            />
+            <button type="submit" disabled={!text.trim()} className={`${currentTheme.primary} text-white p-3.5 rounded-2xl shadow-lg ${currentTheme.shadow} active:scale-95 transition-all`}>
+              <MdSend size={20} />
+            </button>
+          </form>
+        </footer>
+      </div>
+
+      {/* MOBILE DRAWER & DESKTOP SIDEBAR */}
+      <div className={`fixed inset-0 z-50 transition-opacity duration-300 lg:relative lg:z-auto ${showInfo ? 'opacity-100' : 'opacity-0 pointer-events-none lg:hidden'}`}>
+        {/* Backdrop for Mobile */}
+        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm lg:hidden" onClick={() => setShowInfo(false)} />
+        
+        <aside className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-[2.5rem] p-8 transition-transform duration-500 transform lg:static lg:flex lg:flex-col lg:w-80 lg:m-4 lg:rounded-[2rem] lg:translate-y-0 ${showInfo ? 'translate-y-0' : 'translate-y-full'}`}>
+          <div className="flex items-center justify-between mb-8 lg:hidden">
+            <h2 className="text-xl font-bold">Room Settings</h2>
+            <button onClick={() => setShowInfo(false)} className="p-2 bg-slate-100 rounded-full"><MdClose size={20}/></button>
+          </div>
+
+          <div className="flex flex-col items-center text-center">
+            <div className={`w-20 h-20 ${currentTheme.primary} bg-opacity-10 rounded-3xl flex items-center justify-center ${currentTheme.text} mb-4 ring-8 ring-slate-50`}>
+              <MdPeopleAlt size={40} />
+            </div>
+            <h2 className="text-xl font-bold hidden lg:block">{roomInfo?.name}</h2>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Active Discussion</p>
+          </div>
+
+          <div className="mt-10 space-y-8">
+            <div>
+              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><MdPalette/> Interface Theme</h3>
+              <div className="grid grid-cols-4 gap-3">
+                {Object.entries(THEMES).map(([id, theme]) => (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTheme(id)}
+                    className={`h-10 rounded-xl transition-all ${theme.primary} ${activeTheme === id ? 'ring-4 ring-slate-200' : 'opacity-60 scale-90'}`}
+                  />
+                ))}
               </div>
             </div>
-          </div>
-        );
-      })}
-      <div ref={scrollRef} />
-    </main>
 
-    {/* FOOTER: Modern input with floating action */}
-    <footer className="p-4 bg-white border-t border-slate-200">
-      <form onSubmit={handleSend} className="flex gap-3 max-w-5xl mx-auto">
-        <div className="flex-1 relative flex items-center">
-          <input
-            type="text"
-            placeholder="Type your message..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="w-full bg-slate-100 focus:bg-white border-2 border-transparent focus:border-indigo-500/20 rounded-2xl px-5 py-3 transition-all outline-none text-slate-700 shadow-inner"
-          />
-        </div>
-        <button 
-          type="submit" 
-          disabled={!text.trim()}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white p-3.5 rounded-2xl transition-all active:scale-95 shadow-lg shadow-indigo-200 disabled:shadow-none"
-        >
-          <MdSend size={22} />
-        </button>
-      </form>
-    </footer>
-  </div>
-);
+            <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">About Room</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">{roomInfo?.description || "No specific guidelines set."}</p>
+            </div>
+
+            <button onClick={() => navigate('/dashboard')} className="w-full p-4 bg-red-50 text-red-500 rounded-2xl font-bold text-sm hover:bg-red-100 transition-colors">
+              Leave Chat Room
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
 };
 
 export default Chat;

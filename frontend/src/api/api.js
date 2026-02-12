@@ -13,7 +13,7 @@ export const loginapi=async({email,password})=>{
       email, 
       password 
     });
-    console.log("Login Success:", res.data);
+    //console.log("Login Success:", res.data);
     return res.data;
 
   } catch (e) {
@@ -150,19 +150,12 @@ export const  setRange=async({lng,lat})=>{
 }
 export const getLocalRooms=async({lng,lat,distance})=>{
   const res=await axios.get(`${api}/room/nearby?lng=${lng}&lat=${lat}&distance=${distance}`,getAuthHeader()) ;
-  console.log(res.data);
+  //console.log(res.data);
   return res.data;
 }
 export const verifyGoogleCode = async (code) => {
     const response = await axios.post(`${api}/auth/google`, { code });
-//     axios.interceptors.request.use((config) => {
-//   const token = localStorage.getItem('token');
-//   // Only add header if token exists and is NOT the string "undefined"
-//   if (token && token !== "undefined") {
-//     config.headers.Authorization = `Bearer ${token}`;
-//   }
-//   return config;
-// });
+//     
     return response.data;
 };
 

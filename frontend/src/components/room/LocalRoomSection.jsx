@@ -1,77 +1,74 @@
 import { getLocalRooms, joinRoomApi } from '../../api/api';
-import { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiChatBubbleLeftRight } from "react-icons/hi2";
-import { IoIosArrowDropdownCircle } from "react-icons/io";
-import { MdLock, MdVerified, MdMyLocation } from 'react-icons/md'; // Added MdMyLocation
+import { IoIosArrowDropdownCircle, IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { MdLock, MdMyLocation } from 'react-icons/md';
+import { FaSlackHash } from "react-icons/fa"; // Added the symbol
 import PasswordModal from '../modal/PasswordModal';
 import Toast from '../modal/Toast';
 
 const LocalRoomSection = ({ user }) => {
   const [rooms, setRooms] = useState([]);
-  const [loading, setLoading] = useState(false); // Changed to false initially
-  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const scrollRef = useRef(null);
   const navigate = useNavigate();
 
-  // State for coordinates
-  const [coords, setCoords] = useState({ lng: 77.07, lat: 11.04 }); // Default fallback
+  const [coords, setCoords] = useState({ lng: 77.07, lat: 11.04 });
   const [passModal, setPassModal] = useState({ isOpen: false, roomId: null, roomName: '' });
   const [toast, setToast] = useState({ show: false, message: '', type: 'error' });
 
-  // 1. Logic to fetch rooms based on current coords state
   const fetchRooms = useCallback(async (locationData) => {
     try {
       setLoading(true);
-      const queryParams = { 
+      const response = await getLocalRooms({ 
         lng: locationData.lng, 
         lat: locationData.lat, 
-        distance: 10 // Increased distance slightly for better results
-      };
-      const response = await getLocalRooms(queryParams);
+        distance: 15 
+      });
       const roomArray = response?.data?.data || response?.data || [];
       setRooms(Array.isArray(roomArray) ? roomArray : []);
     } catch (error) {
-      console.error("Local Room Fetch Error:", error);
       setToast({ show: true, message: "Failed to fetch nearby rooms", type: 'error' });
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // 2. Logic to get browser location
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
-      setToast({ show: true, message: "Geolocation not supported by browser", type: 'error' });
+      setToast({ show: true, message: "Geolocation not supported", type: 'error' });
       return;
     }
-
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const newCoords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        };
+        const newCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
         setCoords(newCoords);
-        fetchRooms(newCoords); // Fetch immediately with new data
+        fetchRooms(newCoords);
         setToast({ show: true, message: "Location updated!", type: 'success' });
       },
-      (error) => {
+      () => {
         setLoading(false);
         setToast({ show: true, message: "Location access denied", type: 'error' });
       }
     );
   };
 
-  // Initial fetch on mount
-  useEffect(() => {
-    fetchRooms(coords);
-  }, [fetchRooms]);
+  useEffect(() => { fetchRooms(coords); }, [fetchRooms]);
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const { scrollLeft } = scrollRef.current;
+      const cardWidth = scrollRef.current.firstChild.offsetWidth + 20; 
+      const scrollTo = direction === 'left' ? scrollLeft - cardWidth : scrollLeft + cardWidth;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }
+  };
 
   const handleJoin = (id, isPrivate, ownerId, roomName) => {
-    const currentUserId = user?._id || user?.id;
-    const isOwner = currentUserId === ownerId;
-
+    const isOwner = (user?._id || user?.id) === ownerId;
     if (isPrivate && !isOwner) {
       setPassModal({ isOpen: true, roomId: id, roomName });
     } else {
@@ -84,94 +81,116 @@ const LocalRoomSection = ({ user }) => {
       await joinRoomApi(id, password || "");
       navigate(`/room/${id}`);
     } catch (err) {
-      setToast({
-        show: true,
-        message: err.response?.data?.message || "Error joining room",
-        type: 'error'
-      });
+      setToast({ show: true, message: "Error joining room", type: 'error' });
     } finally {
       setPassModal({ isOpen: false, roomId: null, roomName: '' });
     }
   };
 
   return (
-    <section style={styles.sectionContainer}>
+    <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden transition-all duration-500">
       <PasswordModal
         isOpen={passModal.isOpen}
         roomName={passModal.roomName}
         onCancel={() => setPassModal({ ...passModal, isOpen: false })}
         onConfirm={(password) => executeJoin(passModal.roomId, password)}
       />
-      {toast.show && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
-      )}
+      {toast.show && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
 
-      <div style={styles.header}>
-        <div style={styles.titleWrapper} onClick={() => setIsOpen(!isOpen)}>
-          <div style={styles.pulseDot}></div>
-          <h2 style={styles.sectionTitle}>Nearby Rooms</h2>
-          <span style={styles.countBadge}>{rooms.length} Active</span>
+      <div className="p-6 flex justify-between items-center bg-white relative z-10">
+        <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setIsOpen(!isOpen)}>
+          <div className="relative flex h-3 w-3">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-600"></span>
+          </div>
+          <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+            Nearby <span className="bg-gradient-to-r from-indigo-600 via-pink-500 to-amber-500 bg-clip-text text-transparent">Spaces</span>
+            <IoIosArrowDropdownCircle 
+              className={`text-slate-300 group-hover:text-indigo-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} 
+            />
+          </h2>
         </div>
         
-        <div className="flex items-center gap-4">
-          {/* LOCATION BUTTON */}
+        <div className="flex items-center gap-2">
+          {isOpen && rooms.length > (window.innerWidth < 768 ? 1 : 3) && (
+            <div className="hidden md:flex items-center gap-1 mr-2">
+              <button onClick={() => scroll('left')} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-all"><IoIosArrowBack size={20}/></button>
+              <button onClick={() => scroll('right')} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-all"><IoIosArrowForward size={20}/></button>
+            </div>
+          )}
+          
           <button 
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent toggling the section
-              handleGetLocation();
-            }}
+            onClick={handleGetLocation}
+            className="p-2.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-2xl hover:bg-indigo-50 hover:text-indigo-600 transition-all active:scale-90"
             disabled={loading}
-            style={styles.locationBtn}
-            title="Update Location"
           >
-            <MdMyLocation size={18} className={loading ? "animate-spin" : ""} />
+            <MdMyLocation size={20} className={loading ? "animate-spin" : ""} />
           </button>
-
-          <div 
-            onClick={() => setIsOpen(!isOpen)}
-            style={{
-              ...styles.arrow,
-              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-            }}
-          >
-            <IoIosArrowDropdownCircle size={30}/>
-          </div>
         </div>
       </div>
 
       {isOpen && (
-        <div style={styles.contentArea}>
+        <div className="px-6 pb-8">
           {loading ? (
-            <div style={styles.statusText}>Updating your location...</div>
+            <div className="py-20 flex flex-col items-center justify-center gap-3">
+               <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
           ) : rooms.length > 0 ? (
-            <div style={styles.compactGrid}>
+            <div 
+              ref={scrollRef}
+              className="flex overflow-x-auto gap-5 pb-4 no-scrollbar snap-x snap-mandatory px-1"
+              style={{ scrollBehavior: 'smooth' }}
+            >
               {rooms.map((room) => {
                 const isOwner = (user?._id || user?.id) === room.ownerId;
                 return (
-                  <div key={room._id} style={styles.smallCard}>
-                    <div style={styles.cardContent}>
-                      <div className="flex justify-between items-start">
-                         <h3 style={styles.smallRoomName}>{room.name}</h3>
-                         <div className="flex gap-1">
-                            {isOwner && <MdVerified size={14} className="text-blue-500" title="You own this" />}
-                            {room.isprivate && <MdLock size={14} className="text-amber-500" />}
-                         </div>
+                  <div 
+                    key={room._id} 
+                    className={`snap-center md:snap-start snap-always shrink-0 w-[92%] sm:w-[45%] lg:w-[31.5%] 
+                      border rounded-[2rem] p-6 flex flex-col justify-between 
+                      relative overflow-hidden transition-all duration-500 group
+                      ${isOwner 
+                        ? 'bg-gradient-to-br from-indigo-50/40 to-white border-indigo-100 shadow-indigo-50 hover:shadow-indigo-100/60' 
+                        : 'bg-slate-50/50 border-slate-100 hover:bg-white hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50'
+                      }`}
+                  >
+                    {/* OWNER BACKGROUND WATERMARK */}
+                    {isOwner && (
+                      <div className="absolute -bottom-4 -right-4 text-indigo-600 opacity-[0.09] transition-transform duration-700 group-hover:scale-150 group-hover:-rotate-12 pointer-events-none">
+                         <FaSlackHash size={140} />
                       </div>
-                      <p style={styles.smallRoomDesc}>{room.description}</p>
+                    )}
+
+                    <div className="relative z-10">
+                      <div className="flex justify-between items-start mb-4">
+                        <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${room.isprivate ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                          {room.isprivate ? 'Private' : 'Public'}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {room.isprivate && <MdLock size={18} className="text-amber-500" />}
+                          {isOwner && (
+                            <span className="text-[9px] font-black text-indigo-600 uppercase tracking-tighter bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                               yours
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <h3 className="font-black text-slate-800 text-lg mb-1 truncate tracking-tight">{room.name}</h3>
+                      <p className="text-xs text-slate-500 line-clamp-2 font-medium leading-relaxed">
+                        {room.description || "No description provided."}
+                      </p>
                     </div>
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-50">
-                      <div style={styles.meta}>
-                        <small>{new Date(room.createdAt).toLocaleDateString()}</small>
+
+                    <div className="flex items-center justify-between mt-8 pt-5 border-t border-slate-200/50 relative z-10">
+                      <div className="flex flex-col">
+                         <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Nearby Space</span>
+                         <span className="text-xs font-bold text-slate-700">{new Date(room.createdAt).toLocaleDateString()}</span>
                       </div>
                       <button
                         onClick={() => handleJoin(room._id, room.isprivate, room.ownerId, room.name)}
-                        className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
+                        className="bg-gradient-to-br from-indigo-600 via-pink-500 to-amber-500 text-white p-3 rounded-2xl shadow-lg shadow-indigo-200 hover:scale-110 active:scale-95 transition-all"
                       >
-                        {isOwner ? 'Enter' : 'Join'} <HiChatBubbleLeftRight size={18} />
+                        <HiChatBubbleLeftRight size={22} />
                       </button>
                     </div>
                   </div>
@@ -179,83 +198,15 @@ const LocalRoomSection = ({ user }) => {
               })}
             </div>
           ) : (
-            <div style={styles.emptyText}>No rooms nearby. Try updating your location.</div>
+            <div className="py-16 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
+              <p className="text-slate-400 font-bold text-sm">Nothing nearby right now.</p>
+              <button onClick={handleGetLocation} className="text-indigo-600 text-xs font-black mt-3 uppercase tracking-widest">Update Location</button>
+            </div>
           )}
         </div>
       )}
     </section>
   );
-};
-
-const styles = {
-  // ... existing styles ...
-  sectionContainer: {
-    margin: '10px 0',
-    backgroundColor: '#fff',
-    borderRadius: '12px',
-    border: '1px solid #f1f5f9',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-  },
-  header: {
-    padding: '12px 16px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    cursor: 'pointer',
-    userSelect: 'none'
-  },
-  titleWrapper: { display: 'flex', alignItems: 'center', gap: '10px' },
-  locationBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f8fafc',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    padding: '6px',
-    color: '#6366f1',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    hover: { backgroundColor: '#eff6ff' }
-  },
-  pulseDot: {
-    width: '8px',
-    height: '8px',
-    backgroundColor: '#22c55e',
-    borderRadius: '50%',
-    boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)',
-    animation: 'pulse 2s infinite'
-  },
-  sectionTitle: { fontSize: '0.95rem', fontWeight: '600', color: '#334155', margin: 0 },
-  countBadge: { fontSize: '0.7rem', color: '#10b981', backgroundColor: '#f0fdf4', padding: '2px 8px', borderRadius: '12px' },
-  arrow: { fontSize: '0.7rem', color: '#94a3b8', transition: 'transform 0.3s ease' },
-  contentArea: { padding: '0 16px 16px 16px', borderTop: '1px solid #f8fafc' },
-  compactGrid: { display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '12px' },
-  smallCard: {
-    flex: '1 1 180px',
-    maxWidth: '220px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '8px',
-    padding: '10px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    gap: '8px'
-  },
-  smallRoomName: { fontSize: '0.90rem', fontWeight: '700', color: '#1e293b', margin: 0 },
-  smallRoomDesc: { 
-    fontSize: '0.7rem', 
-    color: '#64748b', 
-    margin: 0,
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden' 
-  },
-  statusText: { fontSize: '0.75rem', color: '#94a3b8', padding: '10px 0' },
-  emptyText: { fontSize: '0.75rem', color: '#94a3b8', padding: '10px 0', textAlign: 'center' },
-  meta: { color: '#9ca3af' },
 };
 
 export default LocalRoomSection;
