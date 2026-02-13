@@ -56,36 +56,36 @@ exports.updateRoom = async (req, res) => {
         const roomId = req.params.id;
         const { name, description, isprivate, password: user_pass, lng, lat, resetLocation } = req.body;
 
-        // 1. Prepare update object
+        
         const updateData = {
             name,
             description,
             isprivate
         };
 
-        // 2. Handle Location Set/Reset
+        
         if (resetLocation) {
-            // Remove location data (Note: ensure your schema allows location to be null/undefined)
+            
             updateData.location = undefined; 
         } else if (lng !== undefined && lat !== undefined) {
-            // Update to new coordinates
+            
             updateData.location = {
                 type: "Point",
                 coordinates: [parseFloat(lng), parseFloat(lat)]
             };
         }
 
-        // 3. Password logic
+       
         if (isprivate === true && user_pass) {
             updateData.password = await bcrypt.hash(user_pass, 10);
         }
 
-        // 4. Find and Update
-        // Use $set for standard fields and $unset if location is being removed
+        
+        
         const updateQuery = { $set: updateData };
         if (resetLocation) {
             updateQuery.$unset = { location: "" };
-            delete updateData.location; // Clean up the set object
+            delete updateData.location; 
         }
 
         const updatedRoom = await room.findOneAndUpdate(
@@ -98,7 +98,7 @@ exports.updateRoom = async (req, res) => {
             return res.status(404).json("Room not found or you are not the owner");
         }
 
-        // 5. Socket Emit
+        
         const io = req.app.get('socketio');
         if (io) {
             io.emit("room-updated", updatedRoom);
@@ -111,7 +111,7 @@ exports.updateRoom = async (req, res) => {
     }
 };exports.getRooms = async (req, res) => {
     try {
-        const existingroom = await room.find().sort({ createdAt: -1 });//resently created first
+        const existingroom = await room.find().sort({ createdAt: -1 });
         if (!existingroom) {
             return res.status(400).json("No room exists");
         }

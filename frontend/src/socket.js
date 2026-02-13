@@ -13,10 +13,10 @@ export const socket = io(socketUrl, {
 
 
 
-socket.on("connect", () => {
-  //console.log("Connected:", socket.id);
-});
+// socket.on("connect", () => {
+//   //console.log("Connected:", socket.id);
+// });
 
-socket.on("disconnect", () => {
-  //console.log("Disconnected from server");
-});
+// socket.on("disconnect", () => {
+//   //console.log("Disconnected from server");
+// });

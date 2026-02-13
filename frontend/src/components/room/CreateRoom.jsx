@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createRoomApi } from '../../api/api';
 import { MdOutlineChatBubble, MdLock, MdPublic, MdArrowBack, MdLocationOn, MdLocationOff } from 'react-icons/md';

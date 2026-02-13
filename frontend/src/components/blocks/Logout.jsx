@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import { MdLogout } from 'react-icons/md';
 
@@ -6,19 +6,19 @@ const Logout = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // 1. Clear all auth data
+    
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('email');
     
-    // 2. Clear session flags
+    
     window.processedLogin = false;
     window.authTriggered = false;
 
-    // 3. Redirect to login
+    
     navigate('/login', { replace: true });
     
-    // 4. Optional: Force a reload to clear any lingering state in memory
+    
     window.location.reload();
   };
 

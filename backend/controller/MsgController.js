@@ -1,4 +1,4 @@
-//const user=require('../model/user')
+
 const msg=require('../model/message');
 
 

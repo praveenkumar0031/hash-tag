@@ -31,7 +31,7 @@ const Chat = () => {
   const [roomInfo, setRoomInfo] = useState(null);
   const [text, setText] = useState('');
   const [fetching, setFetching] = useState(true);
-  const [showInfo, setShowInfo] = useState(false); // Hidden by default for mobile
+  const [showInfo, setShowInfo] = useState(false); 
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [activeTheme, setActiveTheme] = useState(() => localStorage.getItem('chat-theme') || 'indigo');
 
@@ -39,7 +39,7 @@ const Chat = () => {
   const chatContainerRef = useRef(null);
   const currentTheme = THEMES[activeTheme];
 
-  // Logic to assign a consistent color to a userId
+  
   const getUserColor = (id) => {
     if (!id) return USER_COLORS[0];
     let hash = 0;
@@ -134,7 +134,7 @@ const Chat = () => {
             const isMine = senderId === currentUserId;
             const isFirst = idx === 0 || (messages[idx-1].senderId?._id || messages[idx-1].senderId) !== senderId;
             
-            // Theme Logic: Mine = Chosen Global Theme | Others = Random Persistent Color
+            
             const bubbleColor = isMine ? currentTheme.primary : getUserColor(senderId);
 
             return (

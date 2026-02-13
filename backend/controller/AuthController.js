@@ -26,13 +26,12 @@ const oAuth = async (req, res) => {
     const oauth2Client = new OAuth2Client(client_id, client_secret, `${process.env.FRONTEND_URL}/login`);
 
     try {
-        //console.log("Exchanging code for tokens...");
         
         
         const { tokens } = await oauth2Client.getToken(code);
 
         if (!tokens || !tokens.id_token) {
-            //console.error("Exchange failed. Tokens received:", tokens);
+            
             return res.status(400).json({ message: "Google did not return an id_token. The code might be expired or used." });
         }
 
@@ -63,7 +62,7 @@ $set: {
 
         const appToken = jwt.sign({ id: oAuthuser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
         
-        //console.log("Login Successful for:", email);
+        
         res.json({ token: appToken, user: oAuthuser });
 
     } catch (error) {

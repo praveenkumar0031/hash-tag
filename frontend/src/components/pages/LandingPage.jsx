@@ -1,8 +1,8 @@
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import { FaSlackHash, FaMapMarkerAlt, FaShieldAlt, FaWind } from 'react-icons/fa';
 import { MdOutlineTimer, MdCoffee, MdOutlineCleaningServices, MdNearMe, MdGroups } from 'react-icons/md';
-import { HiOutlineLightningBolt } from "react-icons/hi";
+
 
 const LandingPage = () => {
   return (

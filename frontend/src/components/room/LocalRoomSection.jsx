@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { HiChatBubbleLeftRight } from "react-icons/hi2";
 import { IoIosArrowDropdownCircle, IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { MdLock, MdMyLocation } from 'react-icons/md';
-import { FaSlackHash } from "react-icons/fa"; // Added the symbol
+import { FaSlackHash } from "react-icons/fa"; 
 import PasswordModal from '../modal/PasswordModal';
 import Toast from '../modal/Toast';
 

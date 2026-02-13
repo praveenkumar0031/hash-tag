@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { MdClose, MdLock, MdPublic } from 'react-icons/md';
 
 const EditModal = ({ isOpen, room, onConfirm, onCancel }) => {
@@ -15,7 +15,7 @@ const EditModal = ({ isOpen, room, onConfirm, onCancel }) => {
         name: room.name, 
         description: room.description || '', 
         isprivate: room.isprivate || false,
-        password: '' // Keep password empty unless they want to change it
+        password: '' 
       });
     }
   }, [room]);

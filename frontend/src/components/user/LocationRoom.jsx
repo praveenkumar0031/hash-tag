@@ -5,12 +5,7 @@ const LocationRoom=()=>{
   const [error, setError] = useState(null);
   const [localrooms, setLocalRooms] = useState([]);
 
-  // const updateLoc=async({lng,lat})={
-  //   try{
-  //     const res =await setRange({lng,lat});
-  //   }
-      
-  // }
+ 
   const getLocation = () => {
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');

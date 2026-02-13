@@ -40,10 +40,10 @@ io.on("connection", (socket) => {
 
   socket.on("join_room", (roomId) => {
     socket.join(roomId);
-    //console.log(`Socket ${socket.id} joined room ${roomId}`);
+    
   });
 
-  // server.js
+  
   socket.on("send_message", (data) => {
 
     io.to(data.roomId).emit("new-message", data);
@@ -60,3 +60,4 @@ const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {
   console.log(`Server + Socket.IO running on port ${PORT}`);
 });
+console.log(process.env.MONGODB_URL);

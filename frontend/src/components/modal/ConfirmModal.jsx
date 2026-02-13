@@ -1,11 +1,10 @@
-import React from 'react';
+
 
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
   if (!isOpen) return null;
 
   return (
-    // fixed inset-0 ensures it covers the whole screen
-    // p-4 adds a "safety zone" for mobile devices
+ 
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
       
       {/* max-w-sm on desktop, but w-full on mobile */}

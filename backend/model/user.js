@@ -15,7 +15,7 @@ const userSchema=mongoose.Schema({
         },
         coordinates: {
             type: [Number], 
-            index: '2dsphere' // Essential for proximity searches
+            index: '2dsphere' 
         },
         formattedAddress: String
     },
