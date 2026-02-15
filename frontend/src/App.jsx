@@ -8,6 +8,7 @@ import Chat from './components/pages/Chat'
 import LandingPage from './components/pages/LandingPage'
 import ForgotPassword from './components/user/ForgetPassword'
 import {Routes,Route} from 'react-router-dom'
+import Terms from './components/pages/Terms'
 
 import Room from './components/room/Room'
 const App = () => {
@@ -22,6 +23,7 @@ const App = () => {
         <Route path='/nearby/room' element={<Room/>}></Route>
         <Route path='/forget' element={<ForgotPassword/>}></Route>
         <Route path='/' element={<LandingPage/>}></Route>
+        <Route path='/terms' element={<Terms/>}></Route>
       </Routes>
     </div>
   )
