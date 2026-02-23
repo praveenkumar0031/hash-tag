@@ -76,6 +76,7 @@ const Chat = () => {
         
         socket.emit("join_room", roomId);
       } catch (err) {
+        navigate('/login');
         console.error("Sync error:", err);
       }
     };
