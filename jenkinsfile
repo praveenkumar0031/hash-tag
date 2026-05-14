@@ -115,7 +115,7 @@ pipeline {
     }
 
     post {
-        success { echo "Hashtag App is live at http://${env.PUBLIC_IP}:5173" }
+        success { echo "Hashtag App is live at http://${env.PUBLIC_IP}:5173 check this out" }
         failure { echo "Pipeline failed. Check the console logs for Docker or Terraform errors." }
     }
 }
