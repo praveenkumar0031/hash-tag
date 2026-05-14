@@ -1,0 +1,9 @@
+FA:
+docker build -t fp3 --build-arg VITE_BACKEND_API=http://localhost:8000/api/hashtag --build-arg VITE_SOCKET_URL=http://localhost:8000 .
+
+docker run -p 5173:80 fp3
+
+BA:
+docker run -p 8000:8000 --env-file .env backend-app
+
+docker run -p 8000:8000 backend-app
