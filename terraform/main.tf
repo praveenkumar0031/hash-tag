@@ -21,7 +21,7 @@ resource "aws_instance" "app_server" {
   ami           = "ami-091138d0f0d41ff90" # Ubuntu 22.04 LTS
   instance_type = "t3.micro"
   key_name      = "test" # Ensure this matches your AWS Key Pair name
-  vpc_security_group_ids = [aws_security_group.simple_sg.id]
+  vpc_security_group_ids = [data.aws_security_group.existing_sg.id]
 
   # This script runs at first boot to setup the environment
   user_data = <<-EOF
