@@ -1,0 +1,121 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(
+            name: 'ACTION',
+            choices: ['apply', 'destroy'],
+            description: 'Choose whether to Create or Destroy the infrastructure.'
+        )
+    }
+    
+    environment {
+        // IDs match your previous setup and recently added credentials
+        AWS_ACCESS_KEY_ID     = credentials('aws-access-key-id')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
+        AWS_DEFAULT_REGION    = 'ap-south-1' // Updated to Mumbai as per our discussion
+        DOCKER_USER           = 'praveen0031'
+    }
+
+    stages {
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Infrastructure Provisioning') {
+            steps {
+                dir('terraform') {
+                    bat 'terraform init'
+                    bat "terraform ${params.ACTION} -auto-approve"
+                    
+                    script {
+                        if (params.ACTION == 'apply') {
+                            // Capture the new AWS Public IP to use for the build args
+                            def ipRaw = bat(script: "terraform output -raw server_public_ip", returnStdout: true)
+                            env.PUBLIC_IP = ipRaw.split('\r?\n')[-1].trim()
+                            echo "Infrastructure is live at: ${env.PUBLIC_IP}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build & Push with Dynamic IP') {
+            when { expression { params.ACTION == 'apply' } }
+            steps {
+                script {
+                    // Use the IDs you just added to Jenkins
+                    withCredentials([
+                        usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_ID'),
+                        string(credentialsId: 'GOOGLE_CLIENT_ID', variable: 'G_CLIENT_ID')
+                    ]) {
+                        bat "docker login -u ${DOCKER_ID} -p ${DOCKER_PASS}"
+
+                        // Build Frontend with the NEW AWS IP injected
+                        dir('frontend') {
+                            echo "Building Frontend with API pointing to ${env.PUBLIC_IP}..."
+                            bat """
+                            docker build -t ${DOCKER_USER}/hashtag-frontend:latest \
+                              --build-arg VITE_BACKEND_API=http://${env.PUBLIC_IP}:8000/api/hashtag \
+                              --build-arg VITE_SOCKET_URL=http://${env.PUBLIC_IP}:8000 \
+                              --build-arg VITE_GOOGLE_CLIENT_ID=${G_CLIENT_ID} \
+                              --build-arg VITE_FRONTEND_URL=http://${env.PUBLIC_IP}:5173 .
+                            """
+                            bat "docker push ${DOCKER_USER}/hashtag-frontend:latest"
+                        }
+
+                        // Build Backend
+                        dir('backend') {
+                            bat "docker build -t ${DOCKER_USER}/hashtag-backend:latest ."
+                            bat "docker push ${DOCKER_USER}/hashtag-backend:latest"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to EC2') {
+            when { expression { params.ACTION == 'apply' } }
+            steps {
+                script {
+                    withCredentials([
+                        sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'TEMP_KEY'),
+                        string(credentialsId: 'MONGODB_URI', variable: 'MONGO_URL')
+                    ]) {
+                        // Fix local key permissions for Windows
+                        bat """
+                        copy /Y "%TEMP_KEY%" master_key.pem
+                        icacls master_key.pem /reset
+                        icacls master_key.pem /inheritance:r
+                        icacls master_key.pem /grant:r "%USERNAME%":"(R)"
+                        """
+
+                        // Remote Deployment Commands
+                        def deployCmds = [
+                            "docker pull ${DOCKER_USER}/hashtag-backend:latest",
+                            "docker pull ${DOCKER_USER}/hashtag-frontend:latest",
+                            "docker stop backend frontend || true",
+                            "docker rm backend frontend || true",
+                            // Run Backend with Runtime Secret
+                            "docker run -d --name backend -p 8000:8000 -e MONGO_URI='${MONGO_URL}' ${DOCKER_USER}/hashtag-backend:latest",
+                            // Run Frontend
+                            "docker run -d --name frontend -p 5173:80 ${DOCKER_USER}/hashtag-frontend:latest"
+                        ].join(" && ")
+
+                        echo "Deploying containers to ${env.PUBLIC_IP}..."
+                        bat "ssh -i master_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} \"${deployCmds}\""
+                        
+                        bat "del master_key.pem"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success { echo "Hashtag App is live at http://${env.PUBLIC_IP}:5173" }
+        failure { echo "Pipeline failed. Check the console logs for Docker or Terraform errors." }
+    }
+}
