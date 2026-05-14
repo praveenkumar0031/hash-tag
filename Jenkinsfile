@@ -13,7 +13,7 @@ pipeline {
         // IDs match your previous setup and recently added credentials
         AWS_ACCESS_KEY_ID     = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
-        AWS_DEFAULT_REGION    = 'ap-south-1' // Updated to Mumbai as per our discussion
+        AWS_DEFAULT_REGION    = 'us-east-1' // Updated to Mumbai as per our discussion
         DOCKER_USER           = 'praveen0031'
     }
 
