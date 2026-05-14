@@ -18,7 +18,7 @@ data "aws_security_group" "existing_sg" {
 }
 # 3. Single EC2 Instance
 resource "aws_instance" "app_server" {
-  ami           = "ami-091138d0f0d41ff90" # Ubuntu 22.04 LTS
+  ami           = "ami-05cf1e9f73fbad2e2" # Ubuntu 24.04 LTS
   instance_type = "t3.micro"
   key_name      = "test" # Ensure this matches your AWS Key Pair name
   vpc_security_group_ids = [data.aws_security_group.existing_sg.id]
