@@ -85,11 +85,13 @@ pipeline {
                         string(credentialsId: 'MONGODB_URI', variable: 'MONGO_URL')
                     ]) {
                         // Fix local key permissions for Windows
+                        
                         bat """
                         copy /Y "%TEMP_KEY%" master_key.pem
                         icacls master_key.pem /reset
                         icacls master_key.pem /inheritance:r
-                        icacls master_key.pem /grant:r "%USERNAME%":"(R)"
+                        icacls master_key.pem /grant:r *S-1-5-32-544:(R)
+                        icacls master_key.pem /grant:r *S-1-5-18:(R)
                         """
 
                         // Remote Deployment Commands
