@@ -98,7 +98,7 @@ pipeline {
                             "docker rm frontend || true",
                             "docker pull ${DOCKER_USER}/hashtag-backend:latest",
                             "docker pull ${DOCKER_USER}/hashtag-frontend:latest",
-                            "docker run -d --name backend -p 8000:8000 -e MONGO_URL='${MONGO_URL}' -e FRONTEND_URL='http://${env.PUBLIC_IP}:5173' ${DOCKER_USER}/hashtag-backend:latest",
+                            "docker run -d --name backend -p 8000:8000 -e MONGODB_URL='${MONGO_URL}' -e FRONTEND_URL='http://${env.PUBLIC_IP}:5173' ${DOCKER_USER}/hashtag-backend:latest",
                             "docker run -d --name frontend -p 5173:80 ${DOCKER_USER}/hashtag-frontend:latest"
                         ].join(" && ")
 
