@@ -30,19 +30,6 @@ resource "aws_instance" "app_server" {
               sudo apt-get install -y docker.io
               sudo systemctl start docker
               sudo usermod -aG docker ubuntu
-
-              # Replace 'your_username' with your actual Docker Hub username
-              docker pull praveen0031/hashtag-backend:latest
-              docker pull praveen0031/hashtag-frontend:latest
-
-              # Run the Backend
-              docker run -d --name backend -p 8000:8000 \
-                -e MONGO_URI="mongodb+srv://praveen:dbPass0031@cluster0.fqnvpdr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0" \
-                praveen0031/hashtag-backend:latest
-
-              # Run the Frontend
-              docker run -d --name frontend -p 5173:80 \
-                praveen0031/hashtag-frontend:latest
               EOF
 
   tags = {
