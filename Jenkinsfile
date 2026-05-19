@@ -95,16 +95,22 @@ pipeline {
                         """
 
                         // Remote Deployment Commands
+                                                // Remote Deployment Commands
                         def deployCmds = [
+                            // 1. Clean up old containers individually (using || true so it never fails the build)
+                            "docker stop backend || true",
+                            "docker rm backend || true",
+                            "docker stop frontend || true",
+                            "docker rm frontend || true",
+                            
+                            // 2. Pull the fresh images
                             "docker pull ${DOCKER_USER}/hashtag-backend:latest",
                             "docker pull ${DOCKER_USER}/hashtag-frontend:latest",
-                            "docker stop backend frontend || true",
-                            "docker rm backend frontend || true",
-                            // Run Backend with Runtime Secret
-                            "docker run -d --name backend -p 8000:8000 -e MONGO_URI='${MONGO_URL}' ${DOCKER_USER}/hashtag-backend:latest",
-                            // Run Frontend
+                            
+                            // 3. Launch the new containers
+                            "docker run -d --name backend -p 8000:8000 -e MONGO_URI='${MONGO_URL}' -e FRONTEND_URL='http://${env.PUBLIC_IP}:5173' ${DOCKER_USER}/hashtag-backend:latest",
                             "docker run -d --name frontend -p 5173:80 ${DOCKER_USER}/hashtag-frontend:latest"
-                        ].join(" && ")
+                        ].join(" && ") // Now this && is safe because the failing steps are protected by "|| true"
 
                         echo "Deploying containers to ${env.PUBLIC_IP}..."
                         bat "ssh -i master_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} \"${deployCmds}\""
