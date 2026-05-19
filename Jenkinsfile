@@ -10,10 +10,9 @@ pipeline {
     }
     
     environment {
-        // IDs match your previous setup and recently added credentials
         AWS_ACCESS_KEY_ID     = credentials('aws-access-key-id')
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key')
-        AWS_DEFAULT_REGION    = 'us-east-1' // Updated to Mumbai as per our discussion
+        AWS_DEFAULT_REGION    = 'us-east-1' 
         DOCKER_USER           = 'praveen0031'
     }
 
@@ -31,11 +30,13 @@ pipeline {
                     bat "terraform ${params.ACTION} -auto-approve"
                     
                     script {
+                        // ONLY attempt to capture output parameters if we are building resources
                         if (params.ACTION == 'apply') {
-                            // Capture the new AWS Public IP to use for the build args
                             def ipRaw = bat(script: "terraform output -raw server_public_ip", returnStdout: true)
                             env.PUBLIC_IP = ipRaw.split('\r?\n')[-1].trim()
                             echo "Infrastructure is live at: ${env.PUBLIC_IP}"
+                        } else {
+                            echo "Infrastructure has been successfully destroyed."
                         }
                     }
                 }
@@ -43,17 +44,16 @@ pipeline {
         }
 
         stage('Build & Push with Dynamic IP') {
+            // This cleanly prevents local compilations during teardowns
             when { expression { params.ACTION == 'apply' } }
             steps {
                 script {
-                    // Use the IDs you just added to Jenkins
                     withCredentials([
                         usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_ID'),
                         string(credentialsId: 'GOOGLE_CLIENT_ID', variable: 'G_CLIENT_ID')
                     ]) {
                         bat "docker login -u ${DOCKER_ID} -p ${DOCKER_PASS}"
 
-                        // Build Frontend with the NEW AWS IP injected
                         dir('frontend') {
                             echo "Building Frontend with API pointing to ${env.PUBLIC_IP}..."
                             bat """
@@ -66,7 +66,6 @@ pipeline {
                             bat "docker push ${DOCKER_USER}/hashtag-frontend:latest"
                         }
 
-                        // Build Backend
                         dir('backend') {
                             bat "docker build -t ${DOCKER_USER}/hashtag-backend:latest ."
                             bat "docker push ${DOCKER_USER}/hashtag-backend:latest"
@@ -84,8 +83,6 @@ pipeline {
                         sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'TEMP_KEY'),
                         string(credentialsId: 'MONGODB_URI', variable: 'MONGO_URL')
                     ]) {
-                        // Fix local key permissions for Windows
-                        
                         bat """
                         copy /Y "%TEMP_KEY%" master_key.pem
                         icacls master_key.pem /reset
@@ -94,27 +91,19 @@ pipeline {
                         icacls master_key.pem /grant:r *S-1-5-18:(R)
                         """
 
-                        // Remote Deployment Commands
-                                                // Remote Deployment Commands
                         def deployCmds = [
-                            // 1. Clean up old containers individually (using || true so it never fails the build)
                             "docker stop backend || true",
                             "docker rm backend || true",
                             "docker stop frontend || true",
                             "docker rm frontend || true",
-                            
-                            // 2. Pull the fresh images
                             "docker pull ${DOCKER_USER}/hashtag-backend:latest",
                             "docker pull ${DOCKER_USER}/hashtag-frontend:latest",
-                            
-                            // 3. Launch the new containers
-                            "docker run -d --name backend -p 8000:8000 -e MONGO_URI='${MONGO_URL}' -e FRONTEND_URL='http://${env.PUBLIC_IP}:5173' ${DOCKER_USER}/hashtag-backend:latest",
+                            "docker run -d --name backend -p 8000:8000 -e MONGO_URL='${MONGO_URL}' -e FRONTEND_URL='http://${env.PUBLIC_IP}:5173' ${DOCKER_USER}/hashtag-backend:latest",
                             "docker run -d --name frontend -p 5173:80 ${DOCKER_USER}/hashtag-frontend:latest"
-                        ].join(" && ") // Now this && is safe because the failing steps are protected by "|| true"
+                        ].join(" && ")
 
                         echo "Deploying containers to ${env.PUBLIC_IP}..."
                         bat "ssh -i master_key.pem -o StrictHostKeyChecking=no ubuntu@${env.PUBLIC_IP} \"${deployCmds}\""
-                        
                         bat "del master_key.pem"
                     }
                 }
@@ -123,7 +112,17 @@ pipeline {
     }
 
     post {
-        success { echo "Hashtag App is live at http://${env.PUBLIC_IP}:5173 check this out" }
-        failure { echo "Pipeline failed. Check the console logs for Docker or Terraform errors." }
+        success { 
+            script {
+                if (params.ACTION == 'apply') {
+                    echo "Hashtag App is live at http://${env.PUBLIC_IP}:5173 check this out"
+                } else {
+                    echo "Infrastructure teardown completed clean. No active endpoints remaining."
+                }
+            }
+        }
+        failure { 
+            echo "Pipeline failed. Check the console logs for Docker or Terraform errors." 
+        }
     }
 }
