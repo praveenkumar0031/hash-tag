@@ -81,8 +81,8 @@ pipeline {
                 script {
                     withCredentials([
                         sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'TEMP_KEY'),
-                        string(credentialsId: 'MONGODB_URI', variable: 'MONGO_URL')
-                        string(credentialsId: 'JWT_SECRET', variable: 'JWT_KEY')
+                        string(credentialsId: 'MONGODB_URI', variable: 'MONGO_URL'),
+                        string(credentialsId: 'JWT_SECRET', variable: 'JWT_KEY'),
                         string(credentialsId: 'EMAIL_USER', variable: 'MAIL_USER'),
                         string(credentialsId: 'EMAIL_PASS', variable: 'MAIL_PASS')
                     ]) {
