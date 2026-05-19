@@ -82,6 +82,9 @@ pipeline {
                     withCredentials([
                         sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'TEMP_KEY'),
                         string(credentialsId: 'MONGODB_URI', variable: 'MONGO_URL')
+                        string(credentialsId: 'JWT_SECRET', variable: 'JWT_KEY')
+                        string(credentialsId: 'EMAIL_USER', variable: 'MAIL_USER'),
+                        string(credentialsId: 'EMAIL_PASS', variable: 'MAIL_PASS')
                     ]) {
                         bat """
                         copy /Y "%TEMP_KEY%" master_key.pem
@@ -98,7 +101,7 @@ pipeline {
                             "docker rm frontend || true",
                             "docker pull ${DOCKER_USER}/hashtag-backend:latest",
                             "docker pull ${DOCKER_USER}/hashtag-frontend:latest",
-                            "docker run -d --name backend -p 8000:8000 -e MONGODB_URL='${MONGO_URL}' -e FRONTEND_URL='http://${env.PUBLIC_IP}:5173' ${DOCKER_USER}/hashtag-backend:latest",
+                            "docker run -d --name backend -p 8000:8000 -e MONGODB_URL='${MONGO_URL}' -e JWT_SECRET='${JWT_KEY}' -e EMAIL_USER='${MAIL_USER}' -e EMAIL_PASS='${MAIL_PASS}' -e FRONTEND_URL='http://${env.PUBLIC_IP}:5173' ${DOCKER_USER}/hashtag-backend:latest",
                             "docker run -d --name frontend -p 5173:80 ${DOCKER_USER}/hashtag-frontend:latest"
                         ].join(" && ")
 
