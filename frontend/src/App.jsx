@@ -8,6 +8,7 @@ import Chat from './components/pages/Chat'
 import LandingPage from './components/pages/LandingPage'
 import ForgotPassword from './components/user/ForgetPassword'
 import {Routes,Route} from 'react-router-dom'
+import Terms from './components/pages/Terms'
 
 
 const App = () => {
@@ -21,6 +22,7 @@ const App = () => {
         <Route path='/room/create' element={<CreateRoom/>}></Route>
         <Route path='/forget' element={<ForgotPassword/>}></Route>
         <Route path='/' element={<LandingPage/>}></Route>
+        <Route path='/terms' element={<Terms/>}></Route>
       </Routes>
     </div>
   )
